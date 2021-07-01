@@ -1,0 +1,18 @@
+# Source: https://esumii.github.io/min-caml/index-e.html
+
+e ::= 	expressions
+        c	                # constants
+        op(e1, ..., en) 	# primitive operations
+        if e1 then e2 else e3 	# conditional branches
+        let x = e1 in e2 	# variable definitions
+        x 	                # variables
+        let rec x y1 ... yn = e1 in e2 	# function definitions (mutually recursive)
+        e e1 ... en 	    # function applications
+        (e1, ..., en) 	    # tuple creations
+        let (x1, ..., xn) = e1 in e2 	# read from tuples
+
+T ::= 	types
+  π 	# primitive types
+  T1 -> ... -> Tn -> T 	# function types
+  T1 * ... * Tn 	# tuple types
+  α 	# type variables (for type inference)

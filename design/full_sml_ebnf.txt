@@ -1,0 +1,134 @@
+# Grammar source: https://cse.buffalo.edu/~regan/cse305/MLBNF.pdf
+
+# #  comment
+# [] optional (zero or 1)
+# {}  zero or more
+# +  one or more
+# |  alternative
+
+PGM ::= EXP; | {DEC | MODULE | ;}       # (Semicolon == "compile me now")
+DEC ::= val [TVARS] PAT = EXP {and PAT = EXP}
+| val rec [TVARS] ID = fn MATCH {and ID = fn MATCH}  # (SML-NJ; Std ML’97 has "val [TVARS] rec..")
+| fun [TVARS] FBIND {and FBIND}
+| type TBINDS
+| datatype DTBIND {and DTBIND} [withtype TBINDS]
+| datatype ID = datatype LID
+| abstype DTBIND {and DTBIND} [withtype TBINDS] with {DEC[;]} end
+| exception ID [of TYPE | = LID] {and ID [of TYPE | = LID]}
+| local {DEC[;]} in {DEC[;]} end
+| open LID {LID}                    # dump public structure items into scope
+| infix[r] [INT] ID {ID}            # make [right] assoc. infix fn, prec. INT
+| nonfix ID {ID}                    # "nonfix +;" makes you write "+(x,y)".
+
+TVARS ::= TVAR | "("TVAR{,TVAR}")"
+TBINDS ::= [TVARS] ID = TYPE {and [TVARS] ID = TYPE}
+DTBIND ::= [TVARS] ID = ID [of TYPE] {"|" ID [of TYPE]}
+FBIND ::= ID APAT {APAT} = EXP {"|" ID APAT {APAT} = EXP}
+
+TYPE ::= TVAR | RTYPE | BTYPE | LID     # (L)ID must name a type
+| TYPE list | TYPE ref | TYPE array
+| TYPE option | TYPE vector
+| TYPE LID | "("TYPE{,TYPE}")" LID      # ID is a datatype/abstype
+| TYPE * TYPE                           # Builds tuple types
+| TYPE -> TYPE                          # Builds function types
+| "("TYPE")"                            # Note: (T*T)*T != T*T*T !
+RTYPE ::= "{"LABEL: TYPE{, LABEL: TYPE}"}"      # Field names-part of type
+BTYPE ::= int | real | char | string | unit | exn | word | substring
+| bool | order | TextIO.instream | TextIO.outstream (and BinIO."")
+
+
+Expressions. Any ID, EXP, or PAT below may be followed by a colon : and a legal type; this binds looser than before but tighter than andalso. Some lines are redundant—for suggestion and clarity.
+
+EXP ::= CONST | LID | PREFIXFN | PREFCON    # #LABEL passable as a fn
+| #LABEL                                    # #2 (a,b) = b, #c {c=3, e=4} = 3
+| "{"LABEL=EXP {, LABEL=EXP}"}"             # record. Note {2=a, 1=b} = (b,a)
+| "("EXP{, EXP}")"                          # tuple. Note "(EXP)" is legal
+| "("EXP{; EXP}")"                          # sequence-of-"statements"
+| "["EXP{, EXP}"]"                          # list of known length
+| "#["EXP{,EXP}"]"                          # SML-NJ vector: unbreakable list
+| let {DEC[;]} in EXP{;EXP} end             # Makes a scope. Last EXP has no ;
+| EXP EXP               # Includes PREFIXFN EXP. Just space, no comma!
+| ! EXP                 # Dereference--EXP must eval to a ref variable
+| ref EXP               # Here EXP must have a non-polymorphic type
+| EXP INFIXFN EXP       # See top-level infix ops below, precedence 4-7
+| EXP o EXP             # Function composition: literal o. Precedence 3
+| EXP := EXP            # First EXP must eval to ref var. Precedence 3
+| EXP before EXP        # Value is lhs; do rhs for side-effects. Prec.0
+| EXP [: TYPE]          # optional type annotation
+| EXP andalso EXP       # Short-circuit Booleans are "special", not fns
+| EXP orelse EXP
+| EXP handle MATCH      # Catch exn. EXP may need (...)
+| raise EXP             # Throw an exception.
+| if EXP then EXP else EXP      # Just like "EXP ? EXP : EXP" in C
+| while EXP do EXP      # EXPs must use !, :=, or similar
+| case EXP of MATCH     # Often needs (...) around it
+| fn MATCH              # Best use: anonymous functions
+
+Matches and Patterns. Wildcard _ means “ignore”; no (other) ID may appear twice in a PAT.
+MATCH::= PAT => EXP {"|" PAT => EXP}
+PAT ::= APAT        # atomic pattern
+| PREFCON PAT       # pattern with a constructor
+| PAT INFIXCON PAT      # includes list pattern x::rest
+| ID as PAT         # binds ID to a match for PAT
+APAT ::= CONST      # includes MONOCONs and MONOEXNs
+| ID | _            # ID is *written to*, not read!
+| "(" PAT{, PAT} ")"    # tuple pattern
+| "(" APAT{"|" APAT} ")"        # "OR-pattern", in SML-NJ only?
+| "[]" | "[" PAT{,PAT} "]"      # list pattern of fixed size
+| "#[]" | "#[" APAT{,APAT} "]"      # vector pattern, SML-NJ addition
+| "{" FPAT{, FPAT}[, ...] "}"   # record pattern, "..." wildcard
+FPAT ::= LABEL=PAT | ID [as PAT]    # ID names field & gets its value
+
+The Modules System. Factories, not classes. No inheritance or late binding. S :> SIG opaques types in S, and functor Foo(S : BAR) = . . . is like Java class Foo <S extends Bar> {...}
+MODULE ::= STRDEC | SIGDEC | FUNCTDEC
+STRDEC ::= DEC | local {STRDEC[;]} in {STRDEC[;]} end
+| structure ID [:[>] SIG] = STRUCT {and ID [:[>] SIG] = STRUCT}
+STRUCT ::= struct {STRDEC[;]} end           # (can nest structures!)
+| ID "(" [STRUCT | {STRDEC[;]}] ")"         # (functor application)
+| LID | let {STRDEC[;]} in STRUCT end       # (ID names a structure)
+SIGDEC::= signature ID = SIG [QUAL] {and ID = SIG [QUAL]}
+SIG ::= sig {SPEC[;]} end | ID              # (ID names a signature)
+QUAL ::= where type [TVARS] ID = TYPE {and type [TVARS] ID = TYPE}
+SPEC ::= val ID : TYPE {and ID : TYPE}
+| [eq]type [TVARS] ID [= TYPE] {and [TVARS] ID [= TYPE]}
+| datatype DTBIND {and DTBIND}
+| datatype ID = datatype LID
+| exception ID [of TYPE] {and ID [of TYPE]}
+| structure ID : SIG {and ID : SIG}
+| sharing [type] LID = LID {= LID} {and [type] LID = LID {= LID}}
+| include ID {ID}                    # (inlcudes other signatures)
+FUNCTDEC ::= functor FUNCTOR {and FUNCTOR}
+FUNCTOR ::= ID "(" [ID : SIG | SPECS] ")" [:[>] SIG] = STRUCT
+
+
+Identifiers and Literals. Note tilde ˜ for unary minus, not -. Chars cannot be written as ’A’.
+LETTER ::= a | b | ... | z | A | B | ... | Z |        #  /implem.-defined/
+SYMBOL ::= + - / * < > = ! @ # $ % ˆ & ‘ ˜ \ ? : "|"
+DIGIT ::= 0 | 1 | ... | 9
+HEXDIGIT::= DIGIT | a | b | c | d | e | f
+CHAR ::= #"<char>" e.g. #"A" #" " #"\t" #"\000" #"\255" #"\ˆa"
+STRING ::= "anything in quotes"                         # (use \" for " in strings)
+INT ::= [˜]DIGIT{DIGIT}                                 # (leading 0s are OK)
+REAL ::= INT.DIGIT{DIGIT} | INT[.DIGIT{DIGIT}]"E"INT
+WORD ::= 0wDIGIT{DIGIT} | 0wxHEXDIGIT{HEXDIGIT}
+LID ::= {ID.}ID                                    # (long ID, prefixed by (sub)structure names)
+ID ::= ALPHID | SYMBID
+ALPHID ::= LETTER{LETTER | ’ | _}           # (minus reserved words)
+SYMBID ::= SYMBOL{SYMBOL}                   # (minus reserved words)
+LABEL ::= ALPH_ID | SYMB_ID | DIGIT{DIGIT}
+TVAR ::= ’ALPH_ID | ’’ALPH_ID               # (’’ for equality type)
+CONST ::= INT | REAL| CHAR | STRING | WORD | () | MONOCON|MONOEXN
+INFIXFN ::= * | / | div | mod       # (precedence 7)
+| + | - | ˆ                         # (precedence 6)
+| @                                 # (list cons :: also has precedence 5)
+| = | <> | < | > | <= | >=          # (precedence 4)
+| := | o                            # (precedence 3)
+| ID                                # (defaults to precedence 0)
+PREFIXFN::= op INFIXFN | ! | ˜ | not | abs | LID
+PREFCON ::= "SOME" | Fail : string->exn | LID
+INFIXCON::= :: | ID                 # (infix ID in structure is prefix outside it)
+MONOCON ::= true|false|nil| "NONE" | "LESS"|"EQUAL"|"GREATER" | LID
+MONOEXN ::= Bind | Chr | Div | Domain | Empty | Match | Option
+    | Overflow | Size | Span | Subscript | LID
+
+TODO later: Standard library functions, File IO, etc.
