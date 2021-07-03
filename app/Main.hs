@@ -15,7 +15,7 @@ main = do
   file <- openFile filePath ReadMode
   contents <- hGetContents file
   case cmd of
-    Lexer   -> print $ runLexer contents
+    Lexer   -> print $ runLex contents
     Parser  -> print $
-      runParser . runLexer $ contents
+      runParser . runLex $ contents
     Invalid -> putStrLn "Invalid parameters"
