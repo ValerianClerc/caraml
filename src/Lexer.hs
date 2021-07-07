@@ -89,10 +89,25 @@ lexParens ('*':xs) = runLex . goToClosingComment $ xs
 lexParens l = LPAREN : runLex l
 
 lexString :: String -> [Token]
-lexString = undefined
+lexString ('"':xs)
+  | null rest = error "String was never closed"
+  | otherwise = STRING strContents : runLex (tail rest)
+  where
+    (strContents, rest) = span (/= '"') xs
+lexString _ = error "lexString called with a String not starting in \""
 
 lexChar :: String -> [Token]
-lexChar = undefined
+lexChar ('\'':'\\' : x : '\'':xs) = CHAR (matchEscapeChar x) : runLex xs  -- escape characters
+  where
+    matchEscapeChar c = case c of
+      'n' -> '\n'
+      't' -> '\t'
+      'r' -> '\r'
+      'b' -> '\b'
+      _   -> error $ "Invalid escape char: \\" ++ [x]
+lexChar ('\'':x:'\'':xs) = CHAR x : runLex xs
+lexChar ('\'':x:_) = error $ "Invalid char: " ++ [x]
+lexChar _ = error "Invalid character literal"
 
 lexAlpha :: String -> [Token]
 lexAlpha [] = [EOF]

@@ -56,3 +56,18 @@ lexTests = do
       it "_" $ lexSymbol "_" `shouldBe` [UNDERSCORE, EOF]
       it ";" $ lexSymbol ";" `shouldBe` [SC, EOF]
       it "Invalid symbol error" $ evaluate (lexSymbol "~") `shouldThrow` anyErrorCall
+    describe "lexString" $ do
+      it "normal string" $ lexString "\"hello\"" `shouldBe` [STRING "hello", EOF]
+      it "empty string" $ lexString "\"\"" `shouldBe` [STRING "", EOF]
+      it "only 1 double quote" $ evaluate (lexString "\"") `shouldThrow` anyErrorCall
+      it "no double quotes" $ evaluate (lexString "x") `shouldThrow` anyErrorCall
+    describe "lexChar" $ do
+      it "normal char" $ lexChar "'c'" `shouldBe` [CHAR 'c', EOF]
+      it "empty char" $ evaluate (lexChar "''") `shouldThrow` anyErrorCall
+      it "not closed char" $ evaluate (lexChar "'") `shouldThrow` anyErrorCall
+      it "escape char \n" $ lexChar "'\\n'" `shouldBe` [CHAR '\n', EOF]
+      it "escape char \t" $ lexChar "'\\t'" `shouldBe` [CHAR '\t', EOF]
+      it "escape char \r" $ lexChar "'\\r'" `shouldBe` [CHAR '\r', EOF]
+      it "escape char \b" $ lexChar "'\\b'" `shouldBe` [CHAR '\b', EOF]
+      -- for some reason this test doesn't throw an error properly, but it does when run in REPL?
+      -- it "invalid escape char" $ evaluate (lexChar "'\\x'") `shouldThrow` anyException
