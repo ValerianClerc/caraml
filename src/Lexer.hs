@@ -6,7 +6,7 @@ import           Data.Char
 import           Data.List
 
 data Token =
-  LParen
+  LPAREN
   | RPAREN
   | NOT
   | MINUS
@@ -46,11 +46,16 @@ runLex input@(x:xs)
   | isSpace x = runLex xs
   | isDigit x = lexDigit input
   | isAlpha x = lexAlpha input
-  | otherwise = case x of
-      '(' -> parseParens input    -- check for comments with (*
+  | otherwise = lexSymbol input
+
+
+lexSymbol :: String -> [Token]
+lexSymbol [] = [EOF]
+lexSymbol input@(x:xs) = case x of
+      '(' -> lexParens xs    -- check for comments with (*
       ')' -> RPAREN : runLex xs
-      '"' -> parseString input
-      '\'' -> parseChar input
+      '"' -> lexString input
+      '\'' -> lexChar input
       '-' -> MINUS : runLex xs
       '+' -> PLUS : runLex xs
       '*' -> ASTERISK : runLex xs
@@ -70,19 +75,24 @@ runLex input@(x:xs)
           _   -> LST : runLex xs
       ',' -> COMMA : runLex xs
       '_' -> UNDERSCORE : runLex xs
-      ';' -> COMMA : runLex xs
+      ';' -> SC : runLex xs
       _   -> error $ "Invalid character: " ++ [x]
 
--- (x1s, x2s)= span isAlpha input
+lexParens :: String -> [Token]
+lexParens [] = [LPAREN,EOF]
+lexParens ('*':xs) = runLex . goToClosingComment $ xs
+  where
+    goToClosingComment :: String -> String
+    goToClosingComment ('*':')':ys) = ys
+    goToClosingComment (_:ys)       = goToClosingComment ys
+    goToClosingComment []           = []
+lexParens l = LPAREN : runLex l
 
-parseParens :: String -> [Token]
-parseParens = undefined
+lexString :: String -> [Token]
+lexString = undefined
 
-parseString :: String -> [Token]
-parseString = undefined
-
-parseChar :: String -> [Token]
-parseChar = undefined
+lexChar :: String -> [Token]
+lexChar = undefined
 
 lexAlpha :: String -> [Token]
 lexAlpha [] = [EOF]
