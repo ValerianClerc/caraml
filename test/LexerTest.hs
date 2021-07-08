@@ -5,8 +5,9 @@ import           Lexer
 import           Test.Hspec
 -- import           Test.QuickCheck
 
-lexTests :: Spec
-lexTests = do
+
+lexTests :: [String] -> Spec
+lexTests testCases = do
   describe "Lexer tests" $ do
     describe "lexDigit" $ do
       it "\"2001\"" $ lexDigit "2001" `shouldBe` [DIGIT 2001, EOF]
@@ -22,6 +23,7 @@ lexTests = do
       it "\"let\"" $ lexAlpha "let" `shouldBe` [LET, EOF]
       it "\"in\"" $ lexAlpha "in" `shouldBe` [IN, EOF]
       it "\"rec\"" $ lexAlpha "rec" `shouldBe` [REC, EOF]
+      it "\"fun\"" $ lexAlpha "fun" `shouldBe` [FUN, EOF]
       it "\"true\"" $ lexAlpha "true" `shouldBe` [BOOLEAN True, EOF]
       it "\"false\"" $ lexAlpha "false" `shouldBe` [BOOLEAN False, EOF]
       it "\"x\"" $ lexAlpha "x" `shouldBe` [IDENT "x", EOF]
@@ -38,8 +40,8 @@ lexTests = do
     describe "lexSymbol" $ do
       it "(" $ lexSymbol "(" `shouldBe` [LPAREN, EOF]
       it ")" $ lexSymbol ")" `shouldBe` [RPAREN, EOF]
-      --it "\"" $ lexSymbol "\"" `shouldBe` [RPAREN, EOF]
-      --it "'" $ lexSymbol "'" `shouldBe` [RPAREN, EOF]
+      it "double quotes (string)" $ lexSymbol "\"hello\"" `shouldBe` [STRING "hello", EOF]
+      it "single quotes (char)" $ lexSymbol "'a'" `shouldBe` [CHAR 'a', EOF]
       it "-" $ lexSymbol "-" `shouldBe` [MINUS, EOF]
       it "+" $ lexSymbol "+" `shouldBe` [PLUS, EOF]
       it "*" $ lexSymbol "*" `shouldBe` [ASTERISK, EOF]
@@ -65,9 +67,31 @@ lexTests = do
       it "normal char" $ lexChar "'c'" `shouldBe` [CHAR 'c', EOF]
       it "empty char" $ evaluate (lexChar "''") `shouldThrow` anyErrorCall
       it "not closed char" $ evaluate (lexChar "'") `shouldThrow` anyErrorCall
-      it "escape char \n" $ lexChar "'\\n'" `shouldBe` [CHAR '\n', EOF]
-      it "escape char \t" $ lexChar "'\\t'" `shouldBe` [CHAR '\t', EOF]
-      it "escape char \r" $ lexChar "'\\r'" `shouldBe` [CHAR '\r', EOF]
-      it "escape char \b" $ lexChar "'\\b'" `shouldBe` [CHAR '\b', EOF]
+      it "escape char '\\n'" $ lexChar "'\\n'" `shouldBe` [CHAR '\n', EOF]
+      it "escape char '\\t'" $ lexChar "'\\t'" `shouldBe` [CHAR '\t', EOF]
+      it "escape char '\\r'" $ lexChar "'\\r'" `shouldBe` [CHAR '\r', EOF]
+      it "escape char '\\b'" $ lexChar "'\\b'" `shouldBe` [CHAR '\b', EOF]
       -- for some reason this test doesn't throw an error properly, but it does when run in REPL?
       -- it "invalid escape char" $ evaluate (lexChar "'\\x'") `shouldThrow` anyException
+    describe "runLex" $ do
+      it "whitespace" $ runLex "     " `shouldBe` [EOF]
+      it "number" $ runLex "3" `shouldBe` [DIGIT 3, EOF]
+      it "keyword/identifier" $ runLex "let" `shouldBe` [LET, EOF]
+      it "symbol" $ runLex "*" `shouldBe` [ASTERISK, EOF]
+    describe "Lexer full file test cases" $ do
+      it "testCase 0" $
+        runLex (testCases !! 0)
+        `shouldBe`
+        [LET, IDENT "x", EQU, DIGIT 3, IN, IDENT "x", PLUS, DIGIT 4, SC, EOF]
+      it "testCase 1" $
+        runLex (testCases !! 1)
+        `shouldBe`
+        [FUN, IDENT "If", LPAREN, IDENT "x", COMMA, IDENT "y", COMMA, IDENT "z", RPAREN, EQU, IF, IDENT "x", THEN, IDENT "y", ELSE, IDENT "z", SC, EOF]
+      it "testCase 2" $
+        runLex (testCases !! 2)
+        `shouldBe`
+        [FUN, IDENT "fst", LPAREN, IDENT "x", COMMA, IDENT "y", RPAREN, EQU, IDENT "x", SC, EOF]
+      it "testCase 3" $
+        runLex (testCases !! 3)
+        `shouldBe`
+        [FUN, IDENT "fact", LPAREN, IDENT "n", RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF]

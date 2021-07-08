@@ -8,6 +8,7 @@ import           Data.List
 data Token =
   LPAREN
   | RPAREN
+  | FUN
   | NOT
   | MINUS
   | PLUS
@@ -127,6 +128,7 @@ lexAlpha s@(x:_)
       | str == "in" = IN
       | str == "rec" = REC
       | str == "let" = LET
+      | str == "fun" = FUN
       | str == "true" = BOOLEAN True
       | str == "false" = BOOLEAN False
       | otherwise = IDENT str

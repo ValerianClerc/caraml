@@ -5,6 +5,14 @@ import           Test.Hspec
 
 fileName = "./file.cml"
 
+testCases :: [String]
+testCases = [
+  "let x = 3 in x + 4;",
+  "fun If (x,y,z) = if x then y else z;",
+  "fun fst (x,y) = x;",
+  "fun fact (n) = if n=0 then 1 else n*fact(n-1);"
+  ]
+
 -- libTests :: IO ()
 libTests = do
   describe "Lib tests" $ do
@@ -17,6 +25,7 @@ libTests = do
         handleArgs ["aaaaaaaaaaaaa", fileName] `shouldBe` (Invalid, "")
 
 main :: IO ()
-main = hspec $ do
-  libTests
-  lexTests
+main = do
+  hspec $ do
+    libTests
+    lexTests testCases
