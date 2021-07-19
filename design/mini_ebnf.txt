@@ -9,10 +9,12 @@ e ::=   expressions
         if e1 then e2 else e3   # conditional branches
         let x = e1 in e2    # variable definitions
         x                   # variables (identifier x)
-        fun x (y1, y2, ... yn) = e1 in e2      # function definitions
+        fun x (y1, y2, ... yn) = e      # function definitions
         x(e1 ... en)         # function applications
-        (e1, ..., en)       # tuple creations
-        let (x1, ..., xn) = e1 in e2    # read from tuples
+
+        # Will add these later:
+        # (e1, ..., en)       # tuple creations
+        # let (x1, ..., xn) = e1 in e2    # read from tuples
 
 T ::= types
         π   # primitive types
