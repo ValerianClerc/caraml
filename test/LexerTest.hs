@@ -3,10 +3,11 @@ module LexerTest where
 import           Control.Exception (evaluate)
 import           Lexer
 import           Test.Hspec
+import           TestCases
 -- import           Test.QuickCheck
 
 
-lexTests :: [String] -> Spec
+lexTests :: [TestCase] -> Spec
 lexTests testCases = do
   describe "Lexer tests" $ do
     describe "lexDigit" $ do
@@ -80,18 +81,18 @@ lexTests testCases = do
       it "symbol" $ runLex "*" `shouldBe` [ASTERISK, EOF]
     describe "Lexer full file test cases" $ do
       it "testCase 0" $
-        runLex (testCases !! 0)
+        (runLex $ rawTestCase $ testCases !! 0)
         `shouldBe`
         [LET, IDENT "x", EQU, DIGIT 3, IN, IDENT "x", PLUS, DIGIT 4, SC, EOF]
       it "testCase 1" $
-        runLex (testCases !! 1)
+        (runLex $ rawTestCase $ testCases !! 1)
         `shouldBe`
         [FUN, IDENT "If", LPAREN, IDENT "x", COMMA, IDENT "y", COMMA, IDENT "z", RPAREN, EQU, IF, IDENT "x", THEN, IDENT "y", ELSE, IDENT "z", SC, EOF]
       it "testCase 2" $
-        runLex (testCases !! 2)
+        (runLex $ rawTestCase $ testCases !! 2)
         `shouldBe`
         [FUN, IDENT "fst", LPAREN, IDENT "x", COMMA, IDENT "y", RPAREN, EQU, IDENT "x", SC, EOF]
       it "testCase 3" $
-        runLex (testCases !! 3)
+        (runLex $ rawTestCase $ testCases !! 3)
         `shouldBe`
         [FUN, IDENT "fact", LPAREN, IDENT "n", RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF]

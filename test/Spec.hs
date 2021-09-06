@@ -1,17 +1,11 @@
 import           LexerTest
 import           Lib
+import           ParserTest
 import           Test.Hspec
+import           TestCases
 -- import           Test.QuickCheck
 
 fileName = "./file.cml"
-
-testCases :: [String]
-testCases = [
-  "let x = 3 in x + 4;",
-  "fun If (x,y,z) = if x then y else z;",
-  "fun fst (x,y) = x;",
-  "fun fact (n) = if n=0 then 1 else n*fact(n-1);"
-  ]
 
 -- libTests :: IO ()
 libTests = do
@@ -29,3 +23,4 @@ main = do
   hspec $ do
     libTests
     lexTests testCases
+    parserTests testCases

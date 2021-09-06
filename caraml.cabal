@@ -55,6 +55,8 @@ test-suite caraml-test
   main-is: Spec.hs
   other-modules:
       LexerTest
+      ParserTest
+      TestCases
       Paths_caraml
   hs-source-dirs:
       test
