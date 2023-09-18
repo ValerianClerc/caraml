@@ -1,11 +1,23 @@
+{-# LANGUAGE BlockArguments #-}
+
 module LexerTest where
 
-import           Control.Exception (evaluate)
-import           Lexer
-import           Test.Hspec
-import           TestCases
--- import           Test.QuickCheck
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
+import Lexer
+import Test.Hspec
+import TestCases
 
+matchLexTestCase :: TestCase -> IO ()
+matchLexTestCase testCase =
+  let raw = rawTestCase testCase
+      lexed = lexedTestCase testCase
+   in runLex raw `shouldBe` lexed
+
+fullFileTestCases :: SpecWith ()
+fullFileTestCases =
+  foldl1 (>>) $
+    map (\testCase -> it (rawTestCase testCase) $ matchLexTestCase testCase) testCases
 
 lexTests :: [TestCase] -> Spec
 lexTests testCases = do
@@ -72,27 +84,11 @@ lexTests testCases = do
       it "escape char '\\t'" $ lexChar "'\\t'" `shouldBe` [CHAR '\t', EOF]
       it "escape char '\\r'" $ lexChar "'\\r'" `shouldBe` [CHAR '\r', EOF]
       it "escape char '\\b'" $ lexChar "'\\b'" `shouldBe` [CHAR '\b', EOF]
-      -- for some reason this test doesn't throw an error properly, but it does when run in REPL?
-      -- it "invalid escape char" $ evaluate (lexChar "'\\x'") `shouldThrow` anyException
+      it "invalid escape char" $ evaluate (force (lexChar "'\\x'" ++ [EOF])) `shouldThrow` anyErrorCall
     describe "runLex" $ do
       it "whitespace" $ runLex "     " `shouldBe` [EOF]
       it "number" $ runLex "3" `shouldBe` [DIGIT 3, EOF]
       it "keyword/identifier" $ runLex "let" `shouldBe` [LET, EOF]
       it "symbol" $ runLex "*" `shouldBe` [ASTERISK, EOF]
     describe "Lexer full file test cases" $ do
-      it "testCase 0" $
-        (runLex $ rawTestCase $ testCases !! 0)
-        `shouldBe`
-        [LET, IDENT "x", EQU, DIGIT 3, IN, IDENT "x", PLUS, DIGIT 4, SC, EOF]
-      it "testCase 1" $
-        (runLex $ rawTestCase $ testCases !! 1)
-        `shouldBe`
-        [FUN, IDENT "If", LPAREN, IDENT "x", COMMA, IDENT "y", COMMA, IDENT "z", RPAREN, EQU, IF, IDENT "x", THEN, IDENT "y", ELSE, IDENT "z", SC, EOF]
-      it "testCase 2" $
-        (runLex $ rawTestCase $ testCases !! 2)
-        `shouldBe`
-        [FUN, IDENT "fst", LPAREN, IDENT "x", COMMA, IDENT "y", RPAREN, EQU, IDENT "x", SC, EOF]
-      it "testCase 3" $
-        (runLex $ rawTestCase $ testCases !! 3)
-        `shouldBe`
-        [FUN, IDENT "fact", LPAREN, IDENT "n", RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF]
+      fullFileTestCases
