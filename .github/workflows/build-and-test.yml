@@ -40,4 +40,9 @@ jobs:
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
     - name: Run tests
-      run: cabal test all
+      run: cabal test all --test-show-details='always' --enable-coverage
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: hpc-codecov
+        path: ./dist-newstyle/build/**/hpc_index.html
