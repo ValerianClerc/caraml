@@ -1,11 +1,10 @@
 module ParserTest where
 
-import           Control.Exception (evaluate)
-import           Lexer
-import           Parser
-import           Test.Hspec
-import           TestCases
-
+import Control.Exception (evaluate)
+import Lexer
+import Parser
+import Test.Hspec
+import TestCases
 
 parserTests :: [TestCase] -> Spec
 parserTests testCases = do

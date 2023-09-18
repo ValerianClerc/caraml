@@ -1,6 +1,7 @@
 module Lib where
 
 data Selection = Invalid | Lexer | Parser deriving (Show, Eq)
+
 type FileName = String
 
 someFunc :: IO ()

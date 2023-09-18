@@ -1,11 +1,12 @@
-import           LexerTest
-import           Lib
-import           ParserTest
-import           Test.Hspec
-import           TestCases
+import LexerTest
+import Lib
+import ParserTest
+import Test.Hspec
+import TestCases
+
 -- import           Test.QuickCheck
 
-fileName = "./file.cml"
+fileName = "./test/file.cml"
 
 -- libTests :: IO ()
 libTests = do
