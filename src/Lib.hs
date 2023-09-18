@@ -8,8 +8,8 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 handleArgs :: [String] -> (Selection, FileName)
-handleArgs strs
+handleArgs strs@(flag : rest)
   | length strs /= 2 = (Invalid, "")
-  | head strs == "--lexer" = (Lexer, strs !! 1)
-  | head strs == "--parser" = (Parser, strs !! 1)
+  | flag == "--lexer" = (Lexer, head rest)
+  | flag == "--parser" = (Parser, head rest)
   | otherwise = (Invalid, "")

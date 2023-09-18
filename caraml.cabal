@@ -57,6 +57,7 @@ test-suite caraml-test
       LexerTest
       ParserTest
       TestCases
+      TestUtils
       Paths_caraml
   hs-source-dirs:
       test

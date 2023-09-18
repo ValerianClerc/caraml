@@ -5,19 +5,10 @@ module LexerTest where
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import Lexer
+import Lib (Selection (Lexer))
 import Test.Hspec
 import TestCases
-
-matchLexTestCase :: TestCase -> IO ()
-matchLexTestCase testCase =
-  let raw = rawTestCase testCase
-      lexed = lexedTestCase testCase
-   in runLex raw `shouldBe` lexed
-
-fullFileTestCases :: SpecWith ()
-fullFileTestCases =
-  foldl1 (>>) $
-    map (\testCase -> it (rawTestCase testCase) $ matchLexTestCase testCase) testCases
+import TestUtils
 
 lexTests :: [TestCase] -> Spec
 lexTests testCases = do
@@ -91,4 +82,4 @@ lexTests testCases = do
       it "keyword/identifier" $ runLex "let" `shouldBe` [LET, EOF]
       it "symbol" $ runLex "*" `shouldBe` [ASTERISK, EOF]
     describe "Lexer full file test cases" $ do
-      fullFileTestCases
+      fullFileTestCases matchLexTestCase
