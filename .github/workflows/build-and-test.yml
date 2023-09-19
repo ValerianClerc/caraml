@@ -45,4 +45,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: hpc-codecov
-        path: ./dist-newstyle/build/**/hpc_index.html
+        path: ./dist-newstyle/build/**/hpc/vanilla/html/caraml-test/*
