@@ -40,9 +40,6 @@ data Token
   | BOOLEAN Bool
   deriving (Show, Eq, NFData, Generic)
 
-whitespace :: [Char]
-whitespace = [' ', '\n', '\r', '\t']
-
 runLex :: String -> [Token]
 runLex [] = [EOF]
 runLex input@(x : xs)
@@ -133,7 +130,6 @@ lexAlpha s@(x : _)
       | str == "let" = LET
       | str == "in" = IN
       | str == "rec" = REC
-      | str == "let" = LET
       | str == "fun" = FUN
       | str == "true" = BOOLEAN True
       | str == "false" = BOOLEAN False

@@ -42,6 +42,7 @@ lexTests testCases = do
       it "no closing comment" $ lexParens "* x true let y" `shouldBe` [EOF]
       it "multiline comment" $ lexParens "* x true \n let y\n *)" `shouldBe` [EOF]
     describe "lexSymbol" $ do
+      it "empty str" $ lexSymbol "" `shouldBe` [EOF]
       it "(" $ lexSymbol "(" `shouldBe` [LPAREN, EOF]
       it ")" $ lexSymbol ")" `shouldBe` [RPAREN, EOF]
       it "double quotes (string)" $ lexSymbol "\"hello\"" `shouldBe` [STRING "hello", EOF]

@@ -4,11 +4,8 @@ import ParserTest
 import Test.Hspec
 import TestCases
 
--- import           Test.QuickCheck
-
 fileName = "./test/file.cml"
 
--- libTests :: IO ()
 libTests = do
   describe "Lib tests" $ do
     describe "handleArgs" $ do
@@ -18,6 +15,8 @@ libTests = do
         handleArgs ["--lexer", fileName] `shouldBe` (Lexer, fileName)
       it "passing in an invalid string and a valid file name" $ do
         handleArgs ["aaaaaaaaaaaaa", fileName] `shouldBe` (Invalid, "")
+      it "passing in an invalid number of arguments" $ do
+        handleArgs ["--parser"] `shouldBe` (Invalid, "")
 
 main :: IO ()
 main = do
