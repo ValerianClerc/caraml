@@ -27,5 +27,5 @@ app/                  # executable file
 design/               # grammar definition of the language
 src/                  # majority of source code
 test/                 # test suite
-package.yaml          # config file for the cabal package
+caraml.cabal          # config file for the cabal package
 ```
