@@ -8,7 +8,7 @@ data Expr
   | LChar Char
   | LBool Bool
   | LString String
-  | BinOp Expr Op Expr
+  | BinOp {binOpLeft :: Expr, binOp :: Op, binOpRight :: Expr}
   | Let {letVar :: String, letEqual :: Expr, letIn :: Expr}
   | Conditional {condBool :: Expr, condIf :: Expr, condElse :: Expr}
   | VarExpr {varExprName :: String}
@@ -23,9 +23,11 @@ runParser [] = []
 runParser (SC : xs) = runParser xs
 runParser input =
   let exprList = splitOn [SC] input
-   in map (\x -> let (x', _) = parseExpr x in x') exprList
-
--- TODO: remove left recursion from grammar
+   in map (checkParseResult . parseExpr) exprList
+  where
+    checkParseResult :: (Expr, [Token]) -> Expr
+    checkParseResult (e, []) = e
+    checkParseResult (_, _) = error "Extra tokens found after end of expression"
 
 expect :: Token -> [Token] -> [Token]
 expect t (x : xs) = if t == x then xs else error $ "Expected " ++ show t ++ ", found " ++ show x
@@ -35,30 +37,95 @@ checkNext :: Token -> [Token] -> Bool
 checkNext t (x : _) = t == x
 checkNext _ [] = False
 
+checkNth :: Token -> Int -> [Token] -> Bool
+checkNth tokenToMatch i tokens =
+  case traverse i tokens of
+    Nothing -> False
+    Just t -> t == tokenToMatch
+  where
+    traverse :: Int -> [Token] -> Maybe Token
+    traverse _ [] = Nothing
+    traverse 0 (t : _) = Just t
+    traverse idx (t : ts) = traverse (idx - 1) ts
+
 parseExpr :: [Token] -> (Expr, [Token])
 parseExpr [] = error "parseExpr was called with an empty token list"
-parseExpr ((DIGIT i) : xs) = (LInt i, xs)
-parseExpr ((CHAR c) : xs) = (LChar c, xs)
-parseExpr ((STRING s) : xs) = (LString s, xs)
-parseExpr ((BOOLEAN b) : xs) = (LBool b, xs)
-parseExpr ((IDENT s) : xs) = (VarExpr {varExprName = s}, xs)
-parseExpr (FUN : (IDENT s) : LPAREN : xs) = (FunDecl {funDeclName = s, funDeclArgs = strArgs, funDeclExpr = funExpr}, rest'')
+-- parse literals
+parseExpr ((DIGIT i) : xs) = parseExprPrime (LInt i) xs
+parseExpr ((CHAR c) : xs) = parseExprPrime (LChar c) xs
+parseExpr ((STRING s) : xs) = parseExprPrime (LString s) xs
+parseExpr ((BOOLEAN b) : xs) = parseExprPrime (LBool b) xs
+-- parsing function application
+parseExpr ((IDENT s) : LPAREN : xs) =
+  let (args, rest) = parseArgs xs
+   in parseExprPrime (FunCall {funCallName = s, funCallArgs = args}) rest
   where
-    -- parsing args from funDecl
+    parseArgs :: [Token] -> ([Expr], [Token])
+    parseArgs [] = ([], [])
+    parseArgs (RPAREN : xs) = ([], xs)
+    parseArgs xs =
+      let (arg, rest) = parseExpr xs
+       in if checkNext COMMA rest
+            then
+              let (args, rest') = parseArgs (tail rest)
+               in (arg : args, rest')
+            else ([arg], rest)
+-- parsing variable expression
+parseExpr ((IDENT s) : xs) = parseExprPrime (VarExpr {varExprName = s}) xs
+-- parsing function declaration
+parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = strArgs, funDeclExpr = funExpr}) rest''
+  where
     (rawArgs, rest) = span (/= RPAREN) xs
-    args = concat $ splitOn [COMMA] rawArgs -- TODO: make funDeclArgs [Token] => [String] (they should all be IDENT Tokens anyways, just need to extract)
-    isIdent (IDENT i) = i
-    isIdent t = error $ "Expected identifier in function declaration arguments, but found: " ++ show t
-    strArgs = map isIdent args
+    args = concat $ splitOn [COMMA] rawArgs
+    getIdentName :: Token -> String
+    getIdentName (IDENT i) = i
+    getIdentName t = error $ "Expected identifier in function declaration arguments, but found: " ++ show t
+    strArgs = map getIdentName args
 
-    rest' = expect RPAREN rest -- discard trailing RPAREN
+    rest' = expect EQU $ expect RPAREN rest -- discard trailing RPAREN and equal sign
     (funExpr, rest'') = parseExpr rest' -- parse function body
+
+-- parsing variable definition
 parseExpr (LET : (IDENT s) : EQU : xs) =
   if head rest == IN
     then
       let (inExpr, rest') = parseExpr $ tail rest
-       in (Let {letVar = s, letEqual = equalExpr, letIn = inExpr}, rest')
+       in parseExprPrime (Let {letVar = s, letEqual = equalExpr, letIn = inExpr}) rest'
     else error "expected \"in\" after let expression"
   where
     (equalExpr, rest) = parseExpr xs
+
+-- parsing if-then-else
+-- TODO: handle nested ifs (if (if x then true else false) then 1 else 2)
+parseExpr (IF : xs) =
+  if not (null restOfIfExpr) || not (null restOfThenExpr)
+    then error "Expected end of expression in if-then statement"
+    else parseExprPrime (Conditional {condBool = ifExpr, condIf = thenExpr, condElse = elseExpr}) rest''
+  where
+    (ifTokens, rest) = span (/= THEN) xs
+    (ifExpr, restOfIfExpr) = parseExpr ifTokens
+    (thenTokens, rest') = span (/= ELSE) (expect THEN rest)
+    (thenExpr, restOfThenExpr) = parseExpr thenTokens
+    (elseExpr, rest'') = parseExpr (expect ELSE rest')
 parseExpr input = error $ "Unimplemented parser case: " ++ show input
+
+isBinOp :: Token -> Maybe Op
+isBinOp PLUS = Just OpPlus
+isBinOp MINUS = Just OpMinus
+isBinOp ASTERISK = Just OpMult
+isBinOp DIVIDE = Just OpDiv
+isBinOp EQU = Just OpEq
+isBinOp NEQ = Just OpNeq
+isBinOp GRT = Just OpGt
+isBinOp GEQ = Just OpGeq
+isBinOp LST = Just OpLt
+isBinOp LEQ = Just OpLeq
+isBinOp _ = Nothing
+
+parseExprPrime :: Expr -> [Token] -> (Expr, [Token])
+parseExprPrime e tokens@(x : xs) =
+  case isBinOp x of
+    Just op ->
+      let (expr, rest) = parseExpr xs
+       in (BinOp {binOpLeft = e, binOp = op, binOpRight = expr}, rest)
+    Nothing -> (e, tokens)
