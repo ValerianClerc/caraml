@@ -51,3 +51,5 @@ parserTests testCases = do
         it "#1 (missing LHS)" $ evaluate (parseExpr [PLUS, DIGIT 3]) `shouldThrow` anyErrorCall
         it "#2 (invalid RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS, FUN, DIGIT 3])) `shouldThrow` anyErrorCall
         it "#3 (missing RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS])) `shouldThrow` anyErrorCall
+  describe "Parser full file test cases:" $ do
+    fullFileTestCases matchParseTestCase

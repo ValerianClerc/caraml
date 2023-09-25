@@ -11,7 +11,7 @@ testCases =
   [ TestCase
       { rawTestCase = "let x = 3 in x + 4;",
         lexedTestCase = [LET, IDENT "x", EQU, DIGIT 3, IN, IDENT "x", PLUS, DIGIT 4, SC, EOF],
-        parsedTestCase = [Let {letVar = "x", letEqual = LInt 3, letIn = BinOp (VarExpr "x") OpPlus (LInt 3)}]
+        parsedTestCase = [Let {letVar = "x", letEqual = LInt 3, letIn = BinOp (VarExpr "x") OpPlus (LInt 4)}]
       },
     TestCase
       { rawTestCase = "fun If (x,y,z) = if x then y else z;",

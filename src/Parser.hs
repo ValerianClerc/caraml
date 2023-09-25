@@ -27,12 +27,13 @@ runParser :: [Token] -> [Expr]
 runParser [] = []
 runParser (SC : xs) = runParser xs
 runParser input =
-  let exprList = splitOn [SC] input
-   in map (checkParseResult . parseExpr) exprList
+  let exprList = splitOn [SC] inputToParse
+   in map (checkParseResult . parseExpr) (filter (not . null) exprList)
   where
+    (inputToParse, _) = span (/= EOF) input
+
     checkParseResult :: (Expr, [Token]) -> Expr
     checkParseResult (e, []) = e
-    checkParseResult (e, [EOF]) = e
     checkParseResult (_, _) = error "Extra tokens found after end of expression"
 
 expect :: Token -> [Token] -> [Token]
@@ -102,11 +103,8 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
 
 -- parsing variable definition
 parseExpr (LET : (IDENT s) : EQU : xs) =
-  if head rest == IN
-    then
-      let (inExpr, rest') = parseExpr $ tail rest
-       in parseExprPrime (Let {letVar = s, letEqual = equalExpr, letIn = inExpr}) rest'
-    else error "expected \"in\" after let expression"
+  let (inExpr, rest') = parseExpr $ expect IN rest
+   in parseExprPrime (Let {letVar = s, letEqual = equalExpr, letIn = inExpr}) rest'
   where
     (equalExpr, rest) = parseExpr xs
 
