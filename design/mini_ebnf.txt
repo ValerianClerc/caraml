@@ -4,17 +4,19 @@ program ::=
         (e;)+
 
 e ::=   expressions
-        c                   # constants (int, string, or boolean)
-        e1 op e2            # binary operators (+, -, *, /, =, <>, <, >, <=, >=)
-        if e1 then e2 else e3   # conditional branches
-        let x = e1 in e2    # variable definitions
-        x                   # variables (identifier x)
-        fun x (y1, y2, ... yn) = e      # function definitions
-        x(e1 ... en)         # function applications
+        c e'                   # constants (int, string, or boolean)
+        if e1 then e2 else e3 e'   # conditional branches
+        let x = e1 in e2 e'    # variable definitions
+        x e'                  # variables (identifier x)
+        fun x (y1, y2, ... yn) = e e'     # function definitions
+        x(e1 ... en) e'        # function applications
 
         # Will add these later:
         # (e1, ..., en)       # tuple creations
         # let (x1, ..., xn) = e1 in e2    # read from tuples
+
+e' ::=  op e2            # binary operators (+, -, *, /, =, <>, <, >, <=, >=)
+        E           # empty
 
 T ::= types
         π   # primitive types
