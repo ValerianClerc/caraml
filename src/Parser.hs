@@ -1,6 +1,11 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+
 module Parser where
 
+import Control.DeepSeq (NFData)
 import Data.List.Split
+import GHC.Generics (Generic)
 import Lexer
 
 data Expr
@@ -14,9 +19,9 @@ data Expr
   | VarExpr {varExprName :: String}
   | FunDecl {funDeclName :: String, funDeclArgs :: [String], funDeclExpr :: Expr}
   | FunCall {funCallName :: String, funCallArgs :: [Expr]}
-  deriving (Show, Eq)
+  deriving (Show, Eq, NFData, Generic)
 
-data Op = OpPlus | OpMinus | OpMult | OpDiv | OpEq | OpNeq | OpLt | OpGt | OpLeq | OpGeq deriving (Show, Eq)
+data Op = OpPlus | OpMinus | OpMult | OpDiv | OpEq | OpNeq | OpLt | OpGt | OpLeq | OpGeq deriving (Show, Eq, NFData, Generic)
 
 runParser :: [Token] -> [Expr]
 runParser [] = []
@@ -27,6 +32,7 @@ runParser input =
   where
     checkParseResult :: (Expr, [Token]) -> Expr
     checkParseResult (e, []) = e
+    checkParseResult (e, [EOF]) = e
     checkParseResult (_, _) = error "Extra tokens found after end of expression"
 
 expect :: Token -> [Token] -> [Token]
@@ -69,14 +75,23 @@ parseExpr ((IDENT s) : LPAREN : xs) =
             then
               let (args, rest') = parseArgs (tail rest)
                in (arg : args, rest')
-            else ([arg], rest)
+            else ([arg], expect RPAREN rest)
 -- parsing variable expression
 parseExpr ((IDENT s) : xs) = parseExprPrime (VarExpr {varExprName = s}) xs
 -- parsing function declaration
 parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = strArgs, funDeclExpr = funExpr}) rest''
   where
     (rawArgs, rest) = span (/= RPAREN) xs
-    args = concat $ splitOn [COMMA] rawArgs
+    splitArgs = splitOn [COMMA] rawArgs
+
+    assertAndAppend :: [Token] -> [Token] -> [Token]
+    assertAndAppend ts newToken =
+      if length newToken == 1
+        then ts ++ newToken
+        else error "Expected only one expression between each comma in function declarations"
+
+    args = foldl assertAndAppend [] splitArgs
+
     getIdentName :: Token -> String
     getIdentName (IDENT i) = i
     getIdentName t = error $ "Expected identifier in function declaration arguments, but found: " ++ show t
@@ -129,3 +144,4 @@ parseExprPrime e tokens@(x : xs) =
       let (expr, rest) = parseExpr xs
        in (BinOp {binOpLeft = e, binOp = op, binOpRight = expr}, rest)
     Nothing -> (e, tokens)
+parseExprPrime e [] = (e, [])
