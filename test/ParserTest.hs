@@ -27,10 +27,10 @@ parserTests testCases = do
         it "#3 (invalid else)" $ evaluate (parseExpr [IF, BOOLEAN True, THEN, IDENT "x", ELSE, FUN]) `shouldThrow` anyErrorCall
     describe "variable declaration" $ do
       describe "valid" $ do
-        it "#1" $ parseExpr [LET, IDENT "x", EQU, DIGIT 3, IN, BOOLEAN True] `shouldBe` (Let "x" (LInt 3) (LBool True), [])
+        it "#1" $ parseExpr [LET, IDENT "x", EQU, DIGIT 3] `shouldBe` (Let "x" (LInt 3), [])
       describe "invalid" $ do
-        it "#1 (missing variable identifier)" $ evaluate (parseExpr [LET, EQU, DIGIT 3, IN, BOOLEAN True]) `shouldThrow` anyErrorCall
-        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [LET, IDENT "x", DIGIT 3, IN, BOOLEAN True]) `shouldThrow` anyErrorCall
+        it "#1 (missing variable identifier)" $ evaluate (parseExpr [LET, EQU, DIGIT 3]) `shouldThrow` anyErrorCall
+        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [LET, IDENT "x", DIGIT 3, EQU, BOOLEAN True]) `shouldThrow` anyErrorCall
     describe "function declaration" $ do
       describe "valid" $ do
         it "#1" $ parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"] `shouldBe` (FunDecl "x" ["p1", "p2"] (VarExpr "p1"), [])

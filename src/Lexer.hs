@@ -26,7 +26,6 @@ data Token
   | THEN
   | ELSE
   | LET
-  | IN
   | REC
   | COMMA
   | DOT
@@ -128,7 +127,6 @@ lexAlpha s@(x : _)
       | str == "then" = THEN
       | str == "else" = ELSE
       | str == "let" = LET
-      | str == "in" = IN
       | str == "rec" = REC
       | str == "fun" = FUN
       | str == "true" = BOOLEAN True

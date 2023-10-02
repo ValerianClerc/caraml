@@ -14,7 +14,7 @@ data Expr
   | LBool Bool
   | LString String
   | BinOp {binOpLeft :: Expr, binOp :: Op, binOpRight :: Expr}
-  | Let {letVar :: String, letEqual :: Expr, letIn :: Expr}
+  | Let {letVar :: String, letEqual :: Expr}
   | Conditional {condBool :: Expr, condIf :: Expr, condElse :: Expr}
   | VarExpr {varExprName :: String}
   | FunDecl {funDeclName :: String, funDeclArgs :: [String], funDeclExpr :: Expr}
@@ -103,8 +103,7 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
 
 -- parsing variable definition
 parseExpr (LET : (IDENT s) : EQU : xs) =
-  let (inExpr, rest') = parseExpr $ expect IN rest
-   in parseExprPrime (Let {letVar = s, letEqual = equalExpr, letIn = inExpr}) rest'
+  parseExprPrime (Let {letVar = s, letEqual = equalExpr}) rest
   where
     (equalExpr, rest) = parseExpr xs
 

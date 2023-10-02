@@ -25,7 +25,7 @@ lexTests testCases = do
       it "\"then\"" $ lexAlpha "then" `shouldBe` [THEN, EOF]
       it "\"else\"" $ lexAlpha "else" `shouldBe` [ELSE, EOF]
       it "\"let\"" $ lexAlpha "let" `shouldBe` [LET, EOF]
-      it "\"in\"" $ lexAlpha "in" `shouldBe` [IN, EOF]
+      it "\"letx\"" $ lexAlpha "letx" `shouldBe` [IDENT "letx", EOF]
       it "\"rec\"" $ lexAlpha "rec" `shouldBe` [REC, EOF]
       it "\"fun\"" $ lexAlpha "fun" `shouldBe` [FUN, EOF]
       it "\"true\"" $ lexAlpha "true" `shouldBe` [BOOLEAN True, EOF]
