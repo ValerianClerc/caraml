@@ -8,7 +8,7 @@ e ::=   expressions
         if e1 then e2 else e3 e'   # conditional branches
         let x = e1            # variable definitions
         x e'                  # variables (identifier x)
-        fun x (y1, y2, ... yn) = e e'     # function definitions
+        fun x (y1: t1, y2: t2, ... yn: tn) = e e'     # function definitions
         x(e1 ... en) e'        # function applications
 
         # Will add these later:

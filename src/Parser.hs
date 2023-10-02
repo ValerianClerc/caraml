@@ -8,6 +8,11 @@ import Data.List.Split
 import GHC.Generics (Generic)
 import Lexer
 
+data VarType
+  = VarInt
+  | VarBool
+  deriving (Show, Eq, NFData, Generic)
+
 data Expr
   = LInt Int
   | LChar Char
@@ -17,7 +22,7 @@ data Expr
   | Let {letVar :: String, letEqual :: Expr}
   | Conditional {condBool :: Expr, condIf :: Expr, condElse :: Expr}
   | VarExpr {varExprName :: String}
-  | FunDecl {funDeclName :: String, funDeclArgs :: [String], funDeclExpr :: Expr}
+  | FunDecl {funDeclName :: String, funDeclArgs :: [(String, VarType)], funDeclExpr :: Expr}
   | FunCall {funCallName :: String, funCallArgs :: [Expr]}
   deriving (Show, Eq, NFData, Generic)
 
@@ -80,23 +85,16 @@ parseExpr ((IDENT s) : LPAREN : xs) =
 -- parsing variable expression
 parseExpr ((IDENT s) : xs) = parseExprPrime (VarExpr {varExprName = s}) xs
 -- parsing function declaration
-parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = strArgs, funDeclExpr = funExpr}) rest''
+parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = args, funDeclExpr = funExpr}) rest''
   where
     (rawArgs, rest) = span (/= RPAREN) xs
     splitArgs = splitOn [COMMA] rawArgs
 
-    assertAndAppend :: [Token] -> [Token] -> [Token]
-    assertAndAppend ts newToken =
-      if length newToken == 1
-        then ts ++ newToken
-        else error "Expected only one expression between each comma in function declarations"
-
-    args = foldl assertAndAppend [] splitArgs
-
-    getIdentName :: Token -> String
-    getIdentName (IDENT i) = i
-    getIdentName t = error $ "Expected identifier in function declaration arguments, but found: " ++ show t
-    strArgs = map getIdentName args
+    getArgAndType :: [Token] -> (String, VarType)
+    getArgAndType [IDENT i, COLON, KBOOL] = (i, VarBool)
+    getArgAndType [IDENT i, COLON, KINT] = (i, VarInt)
+    getArgAndType t = error $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
+    args = map getArgAndType splitArgs
 
     rest' = expect EQU $ expect RPAREN rest -- discard trailing RPAREN and equal sign
     (funExpr, rest'') = parseExpr rest' -- parse function body

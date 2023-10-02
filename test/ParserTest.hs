@@ -33,11 +33,12 @@ parserTests testCases = do
         it "#2 (extra digit after identifier)" $ evaluate (parseExpr [LET, IDENT "x", DIGIT 3, EQU, BOOLEAN True]) `shouldThrow` anyErrorCall
     describe "function declaration" $ do
       describe "valid" $ do
-        it "#1" $ parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"] `shouldBe` (FunDecl "x" ["p1", "p2"] (VarExpr "p1"), [])
+        it "#1" $ parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"] `shouldBe` (FunDecl "x" [("p1", VarBool), ("p2", VarInt)] (VarExpr "p1"), [])
       describe "invalid" $ do
-        it "#1 (missing right parens)" $ evaluate (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", EQU, IDENT "p1"]) `shouldThrow` anyErrorCall
-        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [FUN, IDENT "x", DIGIT 3, LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"]) `shouldThrow` anyErrorCall
-        it "#3 (missing comma)" $ evaluate (force (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", IDENT "p2", RPAREN, EQU, IDENT "p1"])) `shouldThrow` anyErrorCall
+        it "#1 (missing right parens)" $ evaluate (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, EQU, IDENT "p1"]) `shouldThrow` anyErrorCall
+        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [FUN, IDENT "x", DIGIT 3, LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"]) `shouldThrow` anyErrorCall
+        it "#3 (missing comma)" $ evaluate (force (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"])) `shouldThrow` anyErrorCall
+        it "#3 (missing type annotations)" $ evaluate (force (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"])) `shouldThrow` anyErrorCall
     describe "function application" $ do
       describe "valid" $ do
         it "#1" $ parseExpr [IDENT "x", LPAREN, DIGIT 3, COMMA, IDENT "p2", RPAREN] `shouldBe` (FunCall "x" [LInt 3, VarExpr "p2"], [])

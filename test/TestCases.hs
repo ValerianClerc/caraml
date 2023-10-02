@@ -17,29 +17,29 @@ testCases =
           ]
       },
     TestCase
-      { rawTestCase = "fun If (x,y,z) = if x then y else z;",
-        lexedTestCase = [FUN, IDENT "If", LPAREN, IDENT "x", COMMA, IDENT "y", COMMA, IDENT "z", RPAREN, EQU, IF, IDENT "x", THEN, IDENT "y", ELSE, IDENT "z", SC, EOF],
+      { rawTestCase = "fun If (x: bool, y: int, z: int) = if x then y else z;",
+        lexedTestCase = [FUN, IDENT "If", LPAREN, IDENT "x", COLON, KBOOL, COMMA, IDENT "y", COLON, KINT, COMMA, IDENT "z", COLON, KINT, RPAREN, EQU, IF, IDENT "x", THEN, IDENT "y", ELSE, IDENT "z", SC, EOF],
         parsedTestCase =
           [ FunDecl
               { funDeclName = "If",
-                funDeclArgs = ["x", "y", "z"],
+                funDeclArgs = [("x", VarBool), ("y", VarInt), ("z", VarInt)],
                 funDeclExpr =
                   Conditional {condBool = VarExpr "x", condIf = VarExpr "y", condElse = VarExpr "z"}
               }
           ]
       },
     TestCase
-      { rawTestCase = "fun fst (x,y) = x;",
-        lexedTestCase = [FUN, IDENT "fst", LPAREN, IDENT "x", COMMA, IDENT "y", RPAREN, EQU, IDENT "x", SC, EOF],
-        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = ["x", "y"], funDeclExpr = VarExpr "x"}]
+      { rawTestCase = "fun fst (x:int,y:int) = x;",
+        lexedTestCase = [FUN, IDENT "fst", LPAREN, IDENT "x", COLON, KINT, COMMA, IDENT "y", COLON, KINT, RPAREN, EQU, IDENT "x", SC, EOF],
+        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = [("x", VarInt), ("y", VarInt)], funDeclExpr = VarExpr "x"}]
       },
     TestCase
-      { rawTestCase = "fun fact (n) = if n=0 then 1 else n*fact(n-1);",
-        lexedTestCase = [FUN, IDENT "fact", LPAREN, IDENT "n", RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF],
+      { rawTestCase = "fun fact (n: int) = if n=0 then 1 else n*fact(n-1);",
+        lexedTestCase = [FUN, IDENT "fact", LPAREN, IDENT "n", COLON, KINT, RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF],
         parsedTestCase =
           [ FunDecl
               { funDeclName = "fact",
-                funDeclArgs = ["n"],
+                funDeclArgs = [("n", VarInt)],
                 funDeclExpr =
                   Conditional
                     { condBool = BinOp (VarExpr "n") OpEq (LInt 0),

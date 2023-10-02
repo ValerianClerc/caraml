@@ -28,6 +28,8 @@ lexTests testCases = do
       it "\"letx\"" $ lexAlpha "letx" `shouldBe` [IDENT "letx", EOF]
       it "\"rec\"" $ lexAlpha "rec" `shouldBe` [REC, EOF]
       it "\"fun\"" $ lexAlpha "fun" `shouldBe` [FUN, EOF]
+      it "\"int\"" $ lexAlpha "int" `shouldBe` [KINT, EOF]
+      it "\"bool\"" $ lexAlpha "bool" `shouldBe` [KBOOL, EOF]
       it "\"true\"" $ lexAlpha "true" `shouldBe` [BOOLEAN True, EOF]
       it "\"false\"" $ lexAlpha "false" `shouldBe` [BOOLEAN False, EOF]
       it "\"x\"" $ lexAlpha "x" `shouldBe` [IDENT "x", EOF]
@@ -62,6 +64,7 @@ lexTests testCases = do
       it "," $ lexSymbol "," `shouldBe` [COMMA, EOF]
       it "_" $ lexSymbol "_" `shouldBe` [UNDERSCORE, EOF]
       it ";" $ lexSymbol ";" `shouldBe` [SC, EOF]
+      it ":" $ lexSymbol ":" `shouldBe` [COLON, EOF]
       it "Invalid symbol error" $ evaluate (lexSymbol "~") `shouldThrow` anyErrorCall
     describe "lexString" $ do
       it "normal string" $ lexString "\"hello\"" `shouldBe` [STRING "hello", EOF]

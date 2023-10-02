@@ -31,12 +31,15 @@ data Token
   | DOT
   | UNDERSCORE
   | SC
+  | COLON
   | EOF
   | IDENT String
   | DIGIT Int
   | STRING String
   | CHAR Char
   | BOOLEAN Bool
+  | KBOOL -- Keyword boolean
+  | KINT -- Keyword int
   deriving (Show, Eq, NFData, Generic)
 
 runLex :: String -> [Token]
@@ -79,6 +82,7 @@ lexSymbol input@(x : xs) = case x of
   ',' -> COMMA : runLex xs
   '_' -> UNDERSCORE : runLex xs
   ';' -> SC : runLex xs
+  ':' -> COLON : runLex xs
   _ -> error $ "Invalid character: " ++ [x]
 
 lexParens :: String -> [Token]
@@ -129,6 +133,8 @@ lexAlpha s@(x : _)
       | str == "let" = LET
       | str == "rec" = REC
       | str == "fun" = FUN
+      | str == "bool" = KBOOL
+      | str == "int" = KINT
       | str == "true" = BOOLEAN True
       | str == "false" = BOOLEAN False
       | otherwise = IDENT str
