@@ -59,6 +59,21 @@ typeTests testCases = do
         it "#1 (condition not bool)" $ evaluate (typeExpr intTEnv (Conditional (VarExpr "x") (VarExpr "x") (VarExpr "x"))) `shouldThrow` anyErrorCall
         it "#2 (if and else return different types)" $ evaluate (typeExpr fullEnv (Conditional (LBool True) (VarExpr "x") (VarExpr "y"))) `shouldThrow` anyErrorCall
         it "#3 (condition not in scope)" $ evaluate (typeExpr intTEnv (Conditional (VarExpr "y") (VarExpr "x") (VarExpr "x"))) `shouldThrow` anyErrorCall
+    describe "binops" $ do
+      describe "valid" $ do
+        it "#1 (addition)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpPlus (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpPlus (IntTExpr 2), TInt, emptyTEnv)
+        it "#2 (subtraction)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpMinus (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpMinus (IntTExpr 2), TInt, emptyTEnv)
+        it "#3 (multiplication)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpMult (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpMult (IntTExpr 2), TInt, emptyTEnv)
+        it "#4 (division)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpDiv (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpDiv (IntTExpr 2), TInt, emptyTEnv)
+        it "#5 (equality bool)" $ typeExpr emptyTEnv (BinOp (LBool True) OpEq (LBool False)) `shouldBe` (BinOpTExpr TBool (BoolTExpr True) OpEq (BoolTExpr False), TBool, emptyTEnv)
+        it "#6 (equality int)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpEq (LInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpEq (IntTExpr 2), TBool, emptyTEnv)
+        it "#7 (less than)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpLt (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpLt (IntTExpr 2), TInt, emptyTEnv)
+        it "#8 (less than or equal)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpLeq (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpLeq (IntTExpr 2), TInt, emptyTEnv)
+        it "#9 (greater than)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpGt (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpGt (IntTExpr 2), TInt, emptyTEnv)
+        it "#10 (greater than or equal)" $ typeExpr emptyTEnv (BinOp (LInt 1) OpGeq (LInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpGeq (IntTExpr 2), TInt, emptyTEnv)
+      describe "invalid" $ do
+        it "#1 (different typed operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (LInt 1) OpEq (LBool True)))) `shouldThrow` anyErrorCall
+        it "#1 (invalid operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (LBool False) OpPlus (LBool True)))) `shouldThrow` anyErrorCall
   describe "Type inference full file test cases:" $ do
     fullFileTestCases matchTypeInferenceTestCase
 

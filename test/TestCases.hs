@@ -16,7 +16,10 @@ testCases =
           [ Let {Parser.letVar = "x", Parser.letEqual = LInt 3},
             Let {Parser.letVar = "y", Parser.letEqual = BinOp (VarExpr "x") OpPlus (LInt 4)}
           ],
-        typedTestCase = []
+        typedTestCase =
+          [ LetTExpr {TypeInfer.letVar = Variable TInt "x", TypeInfer.letEqual = IntTExpr 3},
+            LetTExpr {TypeInfer.letVar = Variable TInt "y", TypeInfer.letEqual = BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IdentTExpr (Variable TInt "x"), TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 4}}
+          ]
       },
     TestCase
       { rawTestCase = "fun If (x: bool, y: int, z: int) = if x then y else z;",
