@@ -3,6 +3,7 @@ import Lib
 import ParserTest
 import Test.Hspec
 import TestCases
+import TypeTest (typeTests)
 
 fileName = "./test/file.cml"
 
@@ -24,3 +25,4 @@ main = do
     libTests
     lexTests testCases
     parserTests testCases
+    typeTests testCases

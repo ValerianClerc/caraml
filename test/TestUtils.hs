@@ -5,6 +5,7 @@ import Lib (Selection (..))
 import Parser (runParser)
 import Test.Hspec (SpecWith, it, shouldBe)
 import TestCases
+import TypeInfer
 
 matchLexTestCase :: TestCase -> IO ()
 matchLexTestCase testCase =
@@ -17,6 +18,12 @@ matchParseTestCase testCase =
   let lexed = lexedTestCase testCase
       parsed = parsedTestCase testCase
    in runParser lexed `shouldBe` parsed
+
+matchTypeInferenceTestCase :: TestCase -> IO ()
+matchTypeInferenceTestCase testCase =
+  let parsed = parsedTestCase testCase
+      typed = typedTestCase testCase
+   in runTyper parsed `shouldBe` typed
 
 fullFileTestCases :: (TestCase -> IO ()) -> SpecWith ()
 fullFileTestCases matchFun =

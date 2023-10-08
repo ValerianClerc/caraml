@@ -23,6 +23,7 @@ library
       Lexer
       Lib
       Parser
+      TypeInfer
   other-modules:
       Paths_caraml
   hs-source-dirs:
@@ -51,6 +52,7 @@ test-suite caraml-test
   other-modules:
       LexerTest
       ParserTest
+      TypeTest
       TestCases
       TestUtils
       Paths_caraml

@@ -3,8 +3,9 @@ module TestCases where
 import Lexer
 import Lib
 import Parser
+import TypeInfer
 
-data TestCase = TestCase {rawTestCase :: String, lexedTestCase :: [Token], parsedTestCase :: [Expr]}
+data TestCase = TestCase {rawTestCase :: String, lexedTestCase :: [Token], parsedTestCase :: [Expr], typedTestCase :: [TypedExpr]}
 
 testCases :: [TestCase]
 testCases =
@@ -12,9 +13,10 @@ testCases =
       { rawTestCase = "let x = 3; let y = x + 4;",
         lexedTestCase = [LET, IDENT "x", EQU, DIGIT 3, SC, LET, IDENT "y", EQU, IDENT "x", PLUS, DIGIT 4, SC, EOF],
         parsedTestCase =
-          [ Let {letVar = "x", letEqual = LInt 3},
-            Let {letVar = "y", letEqual = BinOp (VarExpr "x") OpPlus (LInt 4)}
-          ]
+          [ Let {Parser.letVar = "x", Parser.letEqual = LInt 3},
+            Let {Parser.letVar = "y", Parser.letEqual = BinOp (VarExpr "x") OpPlus (LInt 4)}
+          ],
+        typedTestCase = []
       },
     TestCase
       { rawTestCase = "fun If (x: bool, y: int, z: int) = if x then y else z;",
@@ -24,14 +26,16 @@ testCases =
               { funDeclName = "If",
                 funDeclArgs = [("x", VarBool), ("y", VarInt), ("z", VarInt)],
                 funDeclExpr =
-                  Conditional {condBool = VarExpr "x", condIf = VarExpr "y", condElse = VarExpr "z"}
+                  Conditional {Parser.condBool = VarExpr "x", Parser.condIf = VarExpr "y", Parser.condElse = VarExpr "z"}
               }
-          ]
+          ],
+        typedTestCase = []
       },
     TestCase
       { rawTestCase = "fun fst (x:int,y:int) = x;",
         lexedTestCase = [FUN, IDENT "fst", LPAREN, IDENT "x", COLON, KINT, COMMA, IDENT "y", COLON, KINT, RPAREN, EQU, IDENT "x", SC, EOF],
-        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = [("x", VarInt), ("y", VarInt)], funDeclExpr = VarExpr "x"}]
+        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = [("x", VarInt), ("y", VarInt)], funDeclExpr = VarExpr "x"}],
+        typedTestCase = []
       },
     TestCase
       { rawTestCase = "fun fact (n: int) = if n=0 then 1 else n*fact(n-1);",
@@ -42,9 +46,9 @@ testCases =
                 funDeclArgs = [("n", VarInt)],
                 funDeclExpr =
                   Conditional
-                    { condBool = BinOp (VarExpr "n") OpEq (LInt 0),
-                      condIf = LInt 1,
-                      condElse =
+                    { Parser.condBool = BinOp (VarExpr "n") OpEq (LInt 0),
+                      Parser.condIf = LInt 1,
+                      Parser.condElse =
                         BinOp
                           (VarExpr "n")
                           OpMult
@@ -55,6 +59,7 @@ testCases =
                           )
                     }
               }
-          ]
+          ],
+        typedTestCase = []
       }
   ]
