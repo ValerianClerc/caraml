@@ -40,22 +40,20 @@ getVarType (TypeEnv bindings) ident =
 
 checkBinOpType :: Type -> Op -> Type -> Type
 checkBinOpType t1 op t2
+  | t1 == TUnknown && t2 == TUnknown = TUnknown
   | op `elem` [OpPlus, OpMinus, OpMult, OpDiv, OpLt, OpGt, OpLeq, OpGeq] =
-      if t1 == TInt && t2 == TInt
+      if t1 == TInt && t2 == TInt || t1 == TUnknown && t2 == TInt || t1 == TInt && t2 == TUnknown
         then TInt
         else error $ "Expected both operands to be of type Int, got " ++ show t1 ++ " and " ++ show t2
   | op `elem` [OpEq, OpNeq] =
-      if t1 == t2
+      if t1 == t2 || t1 == TUnknown || t2 == TUnknown
         then TBool
         else error $ "Expected both operands to be of same type, got " ++ show t1 ++ " and " ++ show t2
   | otherwise = error $ "Unsupported binary operator " ++ show op ++ " for types " ++ show t1 ++ " and " ++ show t2
 
 runTyper :: [Expr] -> [TypedExpr]
-runTyper exprs = map extractTexpr typedResult
+runTyper exprs = map checkUnknowns typedResult
   where
-    extractTexpr :: (TypedExpr, Type, TypeEnv) -> TypedExpr
-    extractTexpr result = let (texpr, _, _) = result in texpr
-
     -- type each expr in the list, accumulating the type environment
     (_, typedResult) =
       mapAccumL
@@ -65,6 +63,8 @@ runTyper exprs = map extractTexpr typedResult
         )
         (TypeEnv [])
         exprs
+
+    checkUnknowns res = let (texpr, _, env) = res in checkForUnknowns env texpr
 
 typeExpr :: TypeEnv -> Parser.Expr -> (TypedExpr, Type, TypeEnv)
 typeExpr env (Parser.LInt i) = (IntTExpr i, TInt, env)
@@ -80,6 +80,8 @@ typeExpr env (Parser.Let name expr) =
     var = Variable t name
 typeExpr env (Parser.Conditional boolExpr ifExpr elseExpr)
   | tBool /= TBool = error $ "Expected expression in if statement to be of type Bool, got " ++ show tBool
+  | tIfTExpr == TUnknown = (IfTExpr tElse typedBoolExpr typedIfTExprExpr typedElseExpr, tElse, env)
+  | tElse == TUnknown = (IfTExpr tIfTExpr typedBoolExpr typedIfTExprExpr typedElseExpr, tIfTExpr, env)
   | tIfTExpr /= tElse = error $ "Expected return type of if/else blocks to be of same type, got " ++ show tIfTExpr ++ " and " ++ show tElse
   | otherwise = (IfTExpr tIfTExpr typedBoolExpr typedIfTExprExpr typedElseExpr, tIfTExpr, env)
   where
@@ -97,10 +99,13 @@ typeExpr env (Parser.FunDecl name args expr) =
   where
     typedArgs = map (\(n, t) -> Variable t n) args
     envWithArgs = foldl addToEnv env typedArgs
-    envWithFun = addToEnv envWithArgs funVar
-    (typedExpr, returnType, _) = typeExpr envWithFun expr
-
     argTypesList = map snd args
+
+    unknownFunType = TFun argTypesList TUnknown
+    unknownFunVar = Variable unknownFunType name
+    envWithUnknown = addToEnv envWithArgs unknownFunVar
+    (typedExpr, returnType, _) = typeExpr envWithUnknown expr
+
     funType = TFun argTypesList returnType
     funVar = Variable funType name
 typeExpr env (Parser.FunCall name args) =
@@ -118,3 +123,20 @@ typeExpr env (Parser.FunCall name args) =
         Just (TFun argTypes t) -> (argTypes, t)
         Just t -> error $ "Expected " ++ name ++ " to be of type TFun, got " ++ show t
 typeExpr env expr = error $ "Type inference not implemented for " ++ show expr
+
+throwIfUnknown :: Type -> a -> a
+throwIfUnknown t x = if t == TUnknown then error "Type inference failed" else x
+
+checkForUnknowns :: TypeEnv -> TypedExpr -> TypedExpr
+checkForUnknowns _ (IntTExpr i) = IntTExpr i
+checkForUnknowns _ (BoolTExpr b) = BoolTExpr b
+checkForUnknowns env (IdentTExpr (Variable t name)) = throwIfUnknown t (IdentTExpr (Variable t name))
+checkForUnknowns env (LetTExpr var expr) = throwIfUnknown TVoid (LetTExpr var (checkForUnknowns env expr))
+checkForUnknowns env (IfTExpr t boolExpr ifExpr elseExpr) = throwIfUnknown t (IfTExpr t (checkForUnknowns env boolExpr) (checkForUnknowns env ifExpr) (checkForUnknowns env elseExpr))
+checkForUnknowns env (BinOpTExpr t left op right) = throwIfUnknown t (BinOpTExpr t (checkForUnknowns env left) op (checkForUnknowns env right))
+checkForUnknowns env (FunDeclTExpr var args expr) = throwIfUnknown TVoid (FunDeclTExpr var args (checkForUnknowns env expr))
+checkForUnknowns env (FunCallTExpr (Variable (TFun _ TUnknown) name) args) =
+  case getVarType env name of
+    Nothing -> error $ "Function " ++ name ++ " not found in environment, type inference failed"
+    Just t -> FunCallTExpr (Variable t name) (map (checkForUnknowns env) args)
+checkForUnknowns env (FunCallTExpr var args) = FunCallTExpr var (map (checkForUnknowns env) args)

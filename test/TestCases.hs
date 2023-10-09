@@ -90,6 +90,34 @@ testCases =
               }
           ],
         typedTestCase =
-          []
+          [ FunDeclTExpr
+              { funDeclIdent = Variable (TFun [TInt] TInt) "fact",
+                funDeclTArgs = [Variable TInt "n"],
+                funDeclTExpr =
+                  IfTExpr
+                    { exprType = TInt,
+                      TypeInfer.condBool = BinOpTExpr {exprType = TBool, TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"), TypeInfer.binOp = OpEq, TypeInfer.binOpRight = IntTExpr 0},
+                      TypeInfer.condIf = IntTExpr 1,
+                      TypeInfer.condElse =
+                        BinOpTExpr
+                          { exprType = TInt,
+                            TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"),
+                            TypeInfer.binOp = OpMult,
+                            TypeInfer.binOpRight =
+                              FunCallTExpr
+                                { funCallIdent = Variable (TFun [TInt] TInt) "fact",
+                                  funCallTArgs =
+                                    [ BinOpTExpr
+                                        { exprType = TInt,
+                                          TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"),
+                                          TypeInfer.binOp = OpMinus,
+                                          TypeInfer.binOpRight = IntTExpr 1
+                                        }
+                                    ]
+                                }
+                          }
+                    }
+              }
+          ]
       }
   ]
