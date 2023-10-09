@@ -26,7 +26,6 @@ data Op = OpPlus | OpMinus | OpMult | OpDiv | OpEq | OpNeq | OpLt | OpGt | OpLeq
 
 runParser :: [Token] -> [Expr]
 runParser [] = []
-runParser (SC : xs) = runParser xs
 runParser input =
   let exprList = splitOn [SC] inputToParse
    in map (checkParseResult . parseExpr) (filter (not . null) exprList)
@@ -69,7 +68,7 @@ parseExpr ((IDENT s) : LPAREN : xs) =
    in parseExprPrime (FunCall {funCallName = s, funCallArgs = args}) rest
   where
     parseArgs :: [Token] -> ([Expr], [Token])
-    parseArgs [] = ([], [])
+    parseArgs [] = error "Expected RPAREN, found EOF"
     parseArgs (RPAREN : xs) = ([], xs)
     parseArgs xs =
       let (arg, rest) = parseExpr xs
@@ -83,7 +82,6 @@ parseExpr ((IDENT s) : xs) = parseExprPrime (VarExpr {varExprName = s}) xs
 -- parsing function declaration
 parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = args, funDeclExpr = funExpr}) rest''
   where
-    isEmptyArgs = head xs == RPAREN
     (rawArgs, rest) = span (/= RPAREN) xs
     splitArgs = splitOn [COMMA] rawArgs
 
@@ -91,7 +89,7 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
     getArgAndType [IDENT i, COLON, KBOOL] = (i, TBool)
     getArgAndType [IDENT i, COLON, KINT] = (i, TInt)
     getArgAndType t = error $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
-    args = if isEmptyArgs then [] else map getArgAndType splitArgs
+    args = map getArgAndType splitArgs
 
     rest' = expect EQU $ expect RPAREN rest -- discard trailing RPAREN and equal sign
     (funExpr, rest'') = parseExpr rest' -- parse function body

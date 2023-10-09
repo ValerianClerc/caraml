@@ -43,12 +43,23 @@ parserTests testCases = do
     describe "function application" $ do
       describe "valid" $ do
         it "#1" $ parseExpr [IDENT "x", LPAREN, DIGIT 3, COMMA, IDENT "p2", RPAREN] `shouldBe` (FunCall "x" [LInt 3, VarExpr "p2"], [])
+        it "#2 (empty args)" $ parseExpr [IDENT "x", LPAREN, RPAREN] `shouldBe` (FunCall "x" [], [])
       describe "invalid" $ do
         it "#1 (missing right parens)" $ evaluate (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"]) `shouldThrow` anyErrorCall
         it "#2 (no comma)" $ evaluate (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"]) `shouldThrow` anyErrorCall
     describe "binary operation" $ do
       describe "valid" $ do
-        it "#1" $ parseExpr [IDENT "x", PLUS, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (LInt 3), [])
+        it "#1 (plus)" $ parseExpr [IDENT "x", PLUS, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (LInt 3), [])
+        it "#2 (minus)" $ parseExpr [IDENT "x", MINUS, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpMinus (LInt 3), [])
+        it "#3 (mult)" $ parseExpr [IDENT "x", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpMult (LInt 3), [])
+        it "#4 (divide)" $ parseExpr [IDENT "x", DIVIDE, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpDiv (LInt 3), [])
+        it "#5 (equal)" $ parseExpr [IDENT "x", EQU, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpEq (LInt 3), [])
+        it "#6 (greater than)" $ parseExpr [IDENT "x", GRT, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpGt (LInt 3), [])
+        it "#7 (greater than or equal)" $ parseExpr [IDENT "x", GEQ, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpGeq (LInt 3), [])
+        it "#8 (less than)" $ parseExpr [IDENT "x", LST, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpLt (LInt 3), [])
+        it "#9 (less than or equal)" $ parseExpr [IDENT "x", LEQ, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpLeq (LInt 3), [])
+        it "#10 (not equal)" $ parseExpr [IDENT "x", NEQ, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpNeq (LInt 3), [])
+        it "#11 (nested)" $ parseExpr [IDENT "x", PLUS, IDENT "y", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (VarExpr "y") OpMult (LInt 3)), [])
       describe "invalid" $ do
         it "#1 (missing LHS)" $ evaluate (parseExpr [PLUS, DIGIT 3]) `shouldThrow` anyErrorCall
         it "#2 (invalid RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS, FUN, DIGIT 3])) `shouldThrow` anyErrorCall

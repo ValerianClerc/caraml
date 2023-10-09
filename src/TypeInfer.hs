@@ -135,12 +135,9 @@ checkForUnknowns env (LetTExpr var expr) = throwIfUnknown TVoid (LetTExpr var (c
 checkForUnknowns env (IfTExpr t boolExpr ifExpr elseExpr) = throwIfUnknown t (IfTExpr t (checkForUnknowns env boolExpr) (checkForUnknowns env ifExpr) (checkForUnknowns env elseExpr))
 checkForUnknowns env (BinOpTExpr t left op right) = throwIfUnknown t (BinOpTExpr t (checkForUnknowns env left) op (checkForUnknowns env right))
 checkForUnknowns env (FunDeclTExpr var@(Variable (TFun targs returnType) name) args expr) = throwIfUnknown returnType (FunDeclTExpr var args (checkForUnknowns env expr))
+checkForUnknowns env (FunDeclTExpr {}) = error "Internal compiler error: FunDeclTExpr should have TFun type"
 checkForUnknowns env (FunCallTExpr (Variable (TFun _ TUnknown) name) args) =
   case getVarType env name of
     Nothing -> error $ "Function " ++ name ++ " not found in environment, type inference failed"
-    Just t ->
-      if t == TUnknown
-        then error $ "Function " ++ name ++ "'s type is unknown, type inference failed"
-        else FunCallTExpr (Variable t name) (map (checkForUnknowns env) args)
+    Just t -> FunCallTExpr (Variable t name) (map (checkForUnknowns env) args)
 checkForUnknowns env (FunCallTExpr var args) = FunCallTExpr var (map (checkForUnknowns env) args)
-checkForUnknowns _ _ = error "Type inference failed: unknown type, compiler hasn't been expanded to cover this case"
