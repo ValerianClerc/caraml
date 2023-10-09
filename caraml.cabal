@@ -24,6 +24,7 @@ library
       Lib
       Parser
       TypeInfer
+      Common
   other-modules:
       Paths_caraml
   hs-source-dirs:

@@ -1,5 +1,6 @@
 module TypeTest where
 
+import Common (Type (..))
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import Parser
@@ -41,8 +42,8 @@ typeTests testCases = do
         it "#2 (new bool, int already in env)" $ typeExpr intTEnv (Let "y" (LBool True)) `shouldBe` (LetTExpr (Variable TBool "y") (BoolTExpr True), TVoid, bothTEnvReverse)
         it "#3 (new int, int already in env)" $ typeExpr intTEnv (Let "y" (LInt 3)) `shouldBe` (LetTExpr (Variable TInt "y") (IntTExpr 3), TVoid, TypeEnv [Variable TInt "y", Variable TInt "x"])
       describe "invalid" $ do
-        it "#1 (already in scope)" $ evaluate (typeExpr intTEnv (Let "x" (LInt 3))) `shouldThrow` anyErrorCall
-        it "#2 (same name different type)" $ evaluate (typeExpr intTEnv (Let "x" (LBool True))) `shouldThrow` anyErrorCall
+        it "#1 (already in scope)" $ evaluate (force (typeExpr intTEnv (Let "x" (LInt 3)))) `shouldThrow` anyErrorCall
+        it "#2 (same name different type)" $ evaluate (force (typeExpr intTEnv (Let "x" (LBool True)))) `shouldThrow` anyErrorCall
     describe "variable expression" $ do
       describe "valid" $ do
         it "#1 (int)" $ typeExpr intTEnv (VarExpr "x") `shouldBe` (IdentTExpr (Variable TInt "x"), TInt, intTEnv)
@@ -74,12 +75,19 @@ typeTests testCases = do
       describe "invalid" $ do
         it "#1 (different typed operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (LInt 1) OpEq (LBool True)))) `shouldThrow` anyErrorCall
         it "#1 (invalid operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (LBool False) OpPlus (LBool True)))) `shouldThrow` anyErrorCall
+    describe "function declaration" $ do
+      describe "valid" $ do
+        it "#1 (no args, return int)" $ typeExpr emptyTEnv (FunDecl "x" [] (LInt 1)) `shouldBe` (FunDeclTExpr (Variable (TFun [] TInt) "x") [] (IntTExpr 1), TVoid, TypeEnv [Variable (TFun [] TInt) "x"])
+        it "#2 (one int arg, return that int)" $ typeExpr emptyTEnv (FunDecl "x" [("y", TInt)] (VarExpr "y")) `shouldBe` (FunDeclTExpr (Variable (TFun [TInt] TInt) "x") [Variable TInt "y"] (IdentTExpr (Variable TInt "y")), TVoid, TypeEnv [Variable (TFun [TInt] TInt) "x"])
+        it "#3 (two int args, return sum)" $ typeExpr emptyTEnv (FunDecl "x" [("y", TInt), ("z", TInt)] (BinOp (VarExpr "y") OpPlus (VarExpr "z"))) `shouldBe` (FunDeclTExpr (Variable (TFun [TInt, TInt] TInt) "x") [Variable TInt "y", Variable TInt "z"] (BinOpTExpr TInt (IdentTExpr (Variable TInt "y")) OpPlus (IdentTExpr (Variable TInt "z"))), TVoid, TypeEnv [Variable (TFun [TInt, TInt] TInt) "x"])
+        it "#4 (one bool arg, return that bool)" $ typeExpr emptyTEnv (FunDecl "x" [("y", TBool)] (VarExpr "y")) `shouldBe` (FunDeclTExpr (Variable (TFun [TBool] TBool) "x") [Variable TBool "y"] (IdentTExpr (Variable TBool "y")), TVoid, TypeEnv [Variable (TFun [TBool] TBool) "x"])
+        it "#5 (no args, return int from env)" $ typeExpr intTEnv (FunDecl "f" [] (VarExpr "x")) `shouldBe` (FunDeclTExpr (Variable (TFun [] TInt) "f") [] (IdentTExpr (Variable TInt "x")), TVoid, TypeEnv [Variable (TFun [] TInt) "f", Variable TInt "x"])
+      describe "invalid" $ do
+        it "#1 (already in scope)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LInt 1)))) `shouldThrow` anyErrorCall
+        it "#2 (same name different type)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LBool True)))) `shouldThrow` anyErrorCall
   describe "Type inference full file test cases:" $ do
     fullFileTestCases matchTypeInferenceTestCase
 
--- describe "function declaration" $ do
---   describe "valid" $ do
---   describe "invalid" $ do
 -- describe "function application" $ do
 --   describe "valid" $ do
 --   describe "invalid" $ do

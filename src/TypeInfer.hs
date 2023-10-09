@@ -3,17 +3,11 @@
 
 module TypeInfer where
 
+import Common (Type (..))
 import Control.DeepSeq (NFData)
 import Data.List (find, mapAccumL)
 import GHC.Generics (Generic)
 import Parser (Expr (BinOp, Conditional, FunCall, FunDecl, LBool, LInt, Let, VarExpr), Op (..))
-
-data Type
-  = TInt
-  | TBool
-  | TVoid
-  -- TODO: add char, string, list, tuple, function
-  deriving (Show, Eq, NFData, Generic)
 
 data Identifier = Variable {varType :: Type, name :: String}
   deriving (Show, Eq, NFData, Generic)
@@ -25,17 +19,18 @@ data TypedExpr
   | LetTExpr {letVar :: Identifier, letEqual :: TypedExpr}
   | IfTExpr {exprType :: Type, condBool :: TypedExpr, condIf :: TypedExpr, condElse :: TypedExpr}
   | BinOpTExpr {exprType :: Type, binOpLeft :: TypedExpr, binOp :: Op, binOpRight :: TypedExpr}
+  | FunDeclTExpr {funDeclIdent :: Identifier, funDeclTArgs :: [Identifier], funDeclTExpr :: TypedExpr}
+  | FunCallTExpr {funCallIdent :: Identifier, funCallTArgs :: [TypedExpr]}
   deriving (Show, Eq, NFData, Generic)
-
--- TODO: add function declaration and function call
--- \| FunDecl {funDeclIdent :: Identifier, funDeclArgs :: [Identifier], funDeclExpr :: TypedExpr}
--- \| FunCall {funCallIdent :: Identifier, funCallArgs :: [TypedExpr]}
 
 newtype TypeEnv = TypeEnv [Identifier]
   deriving (Show, Eq, NFData, Generic)
 
 addToEnv :: TypeEnv -> Identifier -> TypeEnv
-addToEnv (TypeEnv bindings) ident = TypeEnv $ ident : bindings
+addToEnv env@(TypeEnv bindings) ident@(Variable itype iname) =
+  case getVarType env iname of
+    Nothing -> TypeEnv (ident : bindings)
+    Just t -> error $ "Variable " ++ iname ++ " already defined in environment"
 
 getVarType :: TypeEnv -> String -> Maybe Type
 getVarType (TypeEnv bindings) ident =
@@ -79,11 +74,9 @@ typeExpr env (Parser.VarExpr name) =
     Nothing -> error $ "Variable " ++ name ++ " not found in environment"
     Just t -> (IdentTExpr $ Variable t name, t, env)
 typeExpr env (Parser.Let name expr) =
-  case getVarType env name of
-    Nothing -> (LetTExpr var ex, TVoid, addToEnv env' var)
-    Just t -> error $ "Variable " ++ name ++ " already defined in environment"
+  (LetTExpr var ex, TVoid, addToEnv env var)
   where
-    (ex, t, env') = typeExpr env expr
+    (ex, t, _) = typeExpr env expr
     var = Variable t name
 typeExpr env (Parser.Conditional boolExpr ifExpr elseExpr)
   | tBool /= TBool = error $ "Expected expression in if statement to be of type Bool, got " ++ show tBool
@@ -99,6 +92,15 @@ typeExpr env (Parser.BinOp left op right) =
     (typedLeftExpr, tLeft, _) = typeExpr env left
     (typedRightExpr, tRight, _) = typeExpr env right
     resultType = checkBinOpType tLeft op tRight
-typeExpr env (Parser.FunDecl name args expr) = undefined
+typeExpr env (Parser.FunDecl name args expr) =
+  (FunDeclTExpr funVar typedArgs typedExpr, TVoid, addToEnv env funVar)
+  where
+    typedArgs = map (\(n, t) -> Variable t n) args
+    envWithArgs = foldl addToEnv env typedArgs
+    (typedExpr, returnType, _) = typeExpr envWithArgs expr
+
+    argTypesList = map snd args
+    funType = TFun argTypesList returnType
+    funVar = Variable funType name
 typeExpr env (Parser.FunCall name args) = undefined
 typeExpr env expr = error $ "Type inference not implemented for " ++ show expr

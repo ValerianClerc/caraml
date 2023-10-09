@@ -1,5 +1,6 @@
 module TestCases where
 
+import Common (Type (..))
 import Lexer
 import Lib
 import Parser
@@ -27,18 +28,36 @@ testCases =
         parsedTestCase =
           [ FunDecl
               { funDeclName = "If",
-                funDeclArgs = [("x", VarBool), ("y", VarInt), ("z", VarInt)],
+                funDeclArgs = [("x", TBool), ("y", TInt), ("z", TInt)],
                 funDeclExpr =
                   Conditional {Parser.condBool = VarExpr "x", Parser.condIf = VarExpr "y", Parser.condElse = VarExpr "z"}
               }
           ],
-        typedTestCase = []
+        typedTestCase =
+          [ FunDeclTExpr
+              { funDeclIdent = Variable (TFun [TBool, TInt, TInt] TInt) "If",
+                funDeclTArgs = [Variable TBool "x", Variable TInt "y", Variable TInt "z"],
+                funDeclTExpr =
+                  IfTExpr
+                    { exprType = TInt,
+                      TypeInfer.condBool = IdentTExpr (Variable TBool "x"),
+                      TypeInfer.condIf = IdentTExpr (Variable TInt "y"),
+                      TypeInfer.condElse = IdentTExpr (Variable TInt "z")
+                    }
+              }
+          ]
       },
     TestCase
       { rawTestCase = "fun fst (x:int,y:int) = x;",
         lexedTestCase = [FUN, IDENT "fst", LPAREN, IDENT "x", COLON, KINT, COMMA, IDENT "y", COLON, KINT, RPAREN, EQU, IDENT "x", SC, EOF],
-        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = [("x", VarInt), ("y", VarInt)], funDeclExpr = VarExpr "x"}],
-        typedTestCase = []
+        parsedTestCase = [FunDecl {funDeclName = "fst", funDeclArgs = [("x", TInt), ("y", TInt)], funDeclExpr = VarExpr "x"}],
+        typedTestCase =
+          [ FunDeclTExpr
+              { funDeclIdent = Variable (TFun [TInt, TInt] TInt) "fst",
+                funDeclTArgs = [Variable TInt "x", Variable TInt "y"],
+                funDeclTExpr = IdentTExpr (Variable TInt "x")
+              }
+          ]
       },
     TestCase
       { rawTestCase = "fun fact (n: int) = if n=0 then 1 else n*fact(n-1);",
@@ -46,7 +65,7 @@ testCases =
         parsedTestCase =
           [ FunDecl
               { funDeclName = "fact",
-                funDeclArgs = [("n", VarInt)],
+                funDeclArgs = [("n", TInt)],
                 funDeclExpr =
                   Conditional
                     { Parser.condBool = BinOp (VarExpr "n") OpEq (LInt 0),
@@ -63,6 +82,7 @@ testCases =
                     }
               }
           ],
-        typedTestCase = []
+        typedTestCase =
+          []
       }
   ]

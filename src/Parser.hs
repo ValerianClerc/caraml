@@ -3,15 +3,11 @@
 
 module Parser where
 
+import Common (Type (TBool, TInt))
 import Control.DeepSeq (NFData)
 import Data.List.Split
 import GHC.Generics (Generic)
 import Lexer
-
-data VarType
-  = VarInt
-  | VarBool
-  deriving (Show, Eq, NFData, Generic)
 
 data Expr
   = LInt Int
@@ -22,7 +18,7 @@ data Expr
   | Let {letVar :: String, letEqual :: Expr}
   | Conditional {condBool :: Expr, condIf :: Expr, condElse :: Expr}
   | VarExpr {varExprName :: String}
-  | FunDecl {funDeclName :: String, funDeclArgs :: [(String, VarType)], funDeclExpr :: Expr}
+  | FunDecl {funDeclName :: String, funDeclArgs :: [(String, Type)], funDeclExpr :: Expr}
   | FunCall {funCallName :: String, funCallArgs :: [Expr]}
   deriving (Show, Eq, NFData, Generic)
 
@@ -90,9 +86,9 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
     (rawArgs, rest) = span (/= RPAREN) xs
     splitArgs = splitOn [COMMA] rawArgs
 
-    getArgAndType :: [Token] -> (String, VarType)
-    getArgAndType [IDENT i, COLON, KBOOL] = (i, VarBool)
-    getArgAndType [IDENT i, COLON, KINT] = (i, VarInt)
+    getArgAndType :: [Token] -> (String, Type)
+    getArgAndType [IDENT i, COLON, KBOOL] = (i, TBool)
+    getArgAndType [IDENT i, COLON, KINT] = (i, TInt)
     getArgAndType t = error $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
     args = map getArgAndType splitArgs
 
