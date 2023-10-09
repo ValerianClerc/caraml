@@ -14,8 +14,8 @@ testCases =
       { rawTestCase = "let x = 3; let y = x + 4;",
         lexedTestCase = [LET, IDENT "x", EQU, DIGIT 3, SC, LET, IDENT "y", EQU, IDENT "x", PLUS, DIGIT 4, SC, EOF],
         parsedTestCase =
-          [ Let {Parser.letVar = "x", Parser.letEqual = LInt 3},
-            Let {Parser.letVar = "y", Parser.letEqual = BinOp (VarExpr "x") OpPlus (LInt 4)}
+          [ Let {Parser.letVar = "x", Parser.letEqual = PInt 3},
+            Let {Parser.letVar = "y", Parser.letEqual = BinOp (VarExpr "x") OpPlus (PInt 4)}
           ],
         typedTestCase =
           [ LetTExpr {TypeInfer.letVar = Variable TInt "x", TypeInfer.letEqual = IntTExpr 3},
@@ -63,7 +63,7 @@ testCases =
     TestCase
       { rawTestCase = "fun f (x:int) = true;let y = f(1)",
         lexedTestCase = [FUN, IDENT "f", LPAREN, IDENT "x", COLON, KINT, RPAREN, EQU, BOOLEAN True, SC, LET, IDENT "y", EQU, IDENT "f", LPAREN, DIGIT 1, RPAREN, EOF],
-        parsedTestCase = [FunDecl {funDeclName = "f", funDeclArgs = [("x", TInt)], funDeclExpr = LBool True}, Let {Parser.letVar = "y", Parser.letEqual = FunCall {funCallName = "f", funCallArgs = [LInt 1]}}],
+        parsedTestCase = [FunDecl {funDeclName = "f", funDeclArgs = [("x", TInt)], funDeclExpr = PBool True}, Let {Parser.letVar = "y", Parser.letEqual = FunCall {funCallName = "f", funCallArgs = [PInt 1]}}],
         typedTestCase = [FunDeclTExpr {funDeclIdent = Variable (TFun [TInt] TBool) "f", funDeclTArgs = [Variable TInt "x"], funDeclTExpr = BoolTExpr True}, LetTExpr {TypeInfer.letVar = Variable TBool "y", TypeInfer.letEqual = FunCallTExpr {funCallIdent = Variable (TFun [TInt] TBool) "f", funCallTArgs = [IntTExpr 1]}}]
       },
     TestCase
@@ -75,15 +75,15 @@ testCases =
                 funDeclArgs = [("n", TInt)],
                 funDeclExpr =
                   Conditional
-                    { Parser.condBool = BinOp (VarExpr "n") OpEq (LInt 0),
-                      Parser.condIf = LInt 1,
+                    { Parser.condBool = BinOp (VarExpr "n") OpEq (PInt 0),
+                      Parser.condIf = PInt 1,
                       Parser.condElse =
                         BinOp
                           (VarExpr "n")
                           OpMult
                           ( FunCall
                               { funCallName = "fact",
-                                funCallArgs = [BinOp (VarExpr "n") OpMinus (LInt 1)]
+                                funCallArgs = [BinOp (VarExpr "n") OpMinus (PInt 1)]
                               }
                           )
                     }
@@ -119,5 +119,12 @@ testCases =
                     }
               }
           ]
+      },
+    -- binop left associativity
+    TestCase
+      { rawTestCase = "1 + 2 + 3;",
+        lexedTestCase = [DIGIT 1, PLUS, DIGIT 2, PLUS, DIGIT 3, SC, EOF],
+        parsedTestCase = [BinOp (BinOp (PInt 1) OpPlus (PInt 2)) OpPlus (PInt 3)],
+        typedTestCase = [BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 1, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 2, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 3}}]
       }
   ]

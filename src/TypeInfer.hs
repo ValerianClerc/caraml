@@ -7,7 +7,7 @@ import Common (Type (..))
 import Control.DeepSeq (NFData)
 import Data.List (find, mapAccumL)
 import GHC.Generics (Generic)
-import Parser (Expr (BinOp, Conditional, FunCall, FunDecl, LBool, LInt, Let, VarExpr), Op (..))
+import Parser (Expr (BinOp, Conditional, FunCall, FunDecl, Let, PBool, PInt, VarExpr), Op (..))
 
 data Identifier = Variable {varType :: Type, name :: String}
   deriving (Show, Eq, NFData, Generic)
@@ -67,8 +67,8 @@ runTyper exprs = map checkUnknowns typedResult
     checkUnknowns res = let (texpr, _, env) = res in checkForUnknowns env texpr
 
 typeExpr :: TypeEnv -> Parser.Expr -> (TypedExpr, Type, TypeEnv)
-typeExpr env (Parser.LInt i) = (IntTExpr i, TInt, env)
-typeExpr env (Parser.LBool b) = (BoolTExpr b, TBool, env)
+typeExpr env (Parser.PInt i) = (IntTExpr i, TInt, env)
+typeExpr env (Parser.PBool b) = (BoolTExpr b, TBool, env)
 typeExpr env (Parser.VarExpr name) =
   case getVarType env name of
     Nothing -> error $ "Variable " ++ name ++ " not found in environment"

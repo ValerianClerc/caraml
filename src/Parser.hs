@@ -10,10 +10,10 @@ import GHC.Generics (Generic)
 import Lexer
 
 data Expr
-  = LInt Int
-  | LChar Char
-  | LBool Bool
-  | LString String
+  = PInt Int
+  | PChar Char
+  | PBool Bool
+  | PString String
   | BinOp {binOpLeft :: Expr, binOp :: Op, binOpRight :: Expr}
   | Let {letVar :: String, letEqual :: Expr}
   | Conditional {condBool :: Expr, condIf :: Expr, condElse :: Expr}
@@ -58,10 +58,10 @@ checkNth tokenToMatch i tokens =
 parseExpr :: [Token] -> (Expr, [Token])
 parseExpr [] = error "parseExpr was called with an empty token list"
 -- parse literals
-parseExpr ((DIGIT i) : xs) = parseExprPrime (LInt i) xs
-parseExpr ((CHAR c) : xs) = parseExprPrime (LChar c) xs
-parseExpr ((STRING s) : xs) = parseExprPrime (LString s) xs
-parseExpr ((BOOLEAN b) : xs) = parseExprPrime (LBool b) xs
+parseExpr ((DIGIT i) : xs) = parseExprPrime (PInt i) xs
+parseExpr ((CHAR c) : xs) = parseExprPrime (PChar c) xs
+parseExpr ((STRING s) : xs) = parseExprPrime (PString s) xs
+parseExpr ((BOOLEAN b) : xs) = parseExprPrime (PBool b) xs
 -- parsing function application
 parseExpr ((IDENT s) : LPAREN : xs) =
   let (args, rest) = parseArgs xs
