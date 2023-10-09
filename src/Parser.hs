@@ -83,6 +83,7 @@ parseExpr ((IDENT s) : xs) = parseExprPrime (VarExpr {varExprName = s}) xs
 -- parsing function declaration
 parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName = s, funDeclArgs = args, funDeclExpr = funExpr}) rest''
   where
+    isEmptyArgs = head xs == RPAREN
     (rawArgs, rest) = span (/= RPAREN) xs
     splitArgs = splitOn [COMMA] rawArgs
 
@@ -90,7 +91,7 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
     getArgAndType [IDENT i, COLON, KBOOL] = (i, TBool)
     getArgAndType [IDENT i, COLON, KINT] = (i, TInt)
     getArgAndType t = error $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
-    args = map getArgAndType splitArgs
+    args = if isEmptyArgs then [] else map getArgAndType splitArgs
 
     rest' = expect EQU $ expect RPAREN rest -- discard trailing RPAREN and equal sign
     (funExpr, rest'') = parseExpr rest' -- parse function body

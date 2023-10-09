@@ -125,7 +125,7 @@ typeExpr env (Parser.FunCall name args) =
 typeExpr env expr = error $ "Type inference not implemented for " ++ show expr
 
 throwIfUnknown :: Type -> a -> a
-throwIfUnknown t x = if t == TUnknown then error "Type inference failed" else x
+throwIfUnknown t x = if t == TUnknown then error "Type inference failed: unknown type" else x
 
 checkForUnknowns :: TypeEnv -> TypedExpr -> TypedExpr
 checkForUnknowns _ (IntTExpr i) = IntTExpr i
@@ -134,9 +134,13 @@ checkForUnknowns env (IdentTExpr (Variable t name)) = throwIfUnknown t (IdentTEx
 checkForUnknowns env (LetTExpr var expr) = throwIfUnknown TVoid (LetTExpr var (checkForUnknowns env expr))
 checkForUnknowns env (IfTExpr t boolExpr ifExpr elseExpr) = throwIfUnknown t (IfTExpr t (checkForUnknowns env boolExpr) (checkForUnknowns env ifExpr) (checkForUnknowns env elseExpr))
 checkForUnknowns env (BinOpTExpr t left op right) = throwIfUnknown t (BinOpTExpr t (checkForUnknowns env left) op (checkForUnknowns env right))
-checkForUnknowns env (FunDeclTExpr var args expr) = throwIfUnknown TVoid (FunDeclTExpr var args (checkForUnknowns env expr))
+checkForUnknowns env (FunDeclTExpr var@(Variable (TFun targs returnType) name) args expr) = throwIfUnknown returnType (FunDeclTExpr var args (checkForUnknowns env expr))
 checkForUnknowns env (FunCallTExpr (Variable (TFun _ TUnknown) name) args) =
   case getVarType env name of
     Nothing -> error $ "Function " ++ name ++ " not found in environment, type inference failed"
-    Just t -> FunCallTExpr (Variable t name) (map (checkForUnknowns env) args)
+    Just t ->
+      if t == TUnknown
+        then error $ "Function " ++ name ++ "'s type is unknown, type inference failed"
+        else FunCallTExpr (Variable t name) (map (checkForUnknowns env) args)
 checkForUnknowns env (FunCallTExpr var args) = FunCallTExpr var (map (checkForUnknowns env) args)
+checkForUnknowns _ _ = error "Type inference failed: unknown type, compiler hasn't been expanded to cover this case"

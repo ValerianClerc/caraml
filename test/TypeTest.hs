@@ -87,16 +87,16 @@ typeTests testCases = do
       describe "invalid" $ do
         it "#1 (already in scope)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LInt 1)))) `shouldThrow` anyErrorCall
         it "#2 (same name different type)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LBool True)))) `shouldThrow` anyErrorCall
+        it "#3 (can't infer recursive function type)" $ evaluate (force (runTyper [FunDecl "x" [] (FunCall "x" [])])) `shouldThrow` anyErrorCall
+        it "#4 (ambiguous return type)" $ evaluate (force (runTyper [FunDecl "f" [("x", TInt)] (Conditional (BinOp (VarExpr "x") OpEq (LInt 1)) (FunCall "f" [VarExpr "x"]) (FunCall "f" [BinOp (VarExpr "x") OpMinus (LInt 1)]))])) `shouldThrow` anyErrorCall
     describe "function application" $ do
       describe "valid" $ do
         it "#1 (bool arg)" $ typeExpr funcEnv (FunCall "f" [LBool True]) `shouldBe` (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BoolTExpr True], TInt, funcEnv)
         it "#2 (binop in arg)" $ typeExpr funcEnv (FunCall "f" [BinOp (LInt 1) OpEq (LInt 2)]) `shouldBe` (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BinOpTExpr TBool (IntTExpr 1) OpEq (IntTExpr 2)], TInt, funcEnv)
+        it "#3 (function application in arg)" $ typeExpr funcEnv (FunCall "f" [BinOp (FunCall "f" [LBool True]) OpEq (LInt 1)]) `shouldBe` (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BinOpTExpr TBool (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BoolTExpr True]) OpEq (IntTExpr 1)], TInt, funcEnv)
+      describe "invalid" $ do
+        it "#1 (not in scope)" $ evaluate (force (typeExpr emptyTEnv (FunCall "f" [LBool True]))) `shouldThrow` anyErrorCall
+        it "#2 (wrong number of args)" $ evaluate (force (typeExpr funcEnv (FunCall "f" [LBool True, LBool False]))) `shouldThrow` anyErrorCall
+        it "#3 (wrong type of args)" $ evaluate (force (typeExpr funcEnv (FunCall "f" [LInt 1]))) `shouldThrow` anyErrorCall
   describe "Type inference full file test cases:" $ do
     fullFileTestCases matchTypeInferenceTestCase
-
--- describe "function application" $ do
---   describe "valid" $ do
---   describe "invalid" $ do
--- describe "binary operation" $ do
---   describe "valid" $ do
---   describe "invalid" $ do
