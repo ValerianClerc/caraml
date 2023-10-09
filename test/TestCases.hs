@@ -59,6 +59,13 @@ testCases =
               }
           ]
       },
+    -- simple funcall
+    TestCase
+      { rawTestCase = "fun f (x:int) = true;let y = f(1)",
+        lexedTestCase = [FUN, IDENT "f", LPAREN, IDENT "x", COLON, KINT, RPAREN, EQU, BOOLEAN True, SC, LET, IDENT "y", EQU, IDENT "f", LPAREN, DIGIT 1, RPAREN, EOF],
+        parsedTestCase = [FunDecl {funDeclName = "f", funDeclArgs = [("x", TInt)], funDeclExpr = LBool True}, Let {Parser.letVar = "y", Parser.letEqual = FunCall {funCallName = "f", funCallArgs = [LInt 1]}}],
+        typedTestCase = [FunDeclTExpr {funDeclIdent = Variable (TFun [TInt] TBool) "f", funDeclTArgs = [Variable TInt "x"], funDeclTExpr = BoolTExpr True}, LetTExpr {TypeInfer.letVar = Variable TBool "y", TypeInfer.letEqual = FunCallTExpr {funCallIdent = Variable (TFun [TInt] TBool) "f", funCallTArgs = [IntTExpr 1]}}]
+      },
     TestCase
       { rawTestCase = "fun fact (n: int) = if n=0 then 1 else n*fact(n-1);",
         lexedTestCase = [FUN, IDENT "fact", LPAREN, IDENT "n", COLON, KINT, RPAREN, EQU, IF, IDENT "n", EQU, DIGIT 0, THEN, DIGIT 1, ELSE, IDENT "n", ASTERISK, IDENT "fact", LPAREN, IDENT "n", MINUS, DIGIT 1, RPAREN, SC, EOF],

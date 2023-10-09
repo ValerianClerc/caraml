@@ -30,6 +30,8 @@ bothTEnvReverse = TypeEnv $ reverse xs
 -- int x, bool y, int z
 fullEnv = TypeEnv [Variable TInt "x", Variable TBool "y", Variable TInt "z"]
 
+funcEnv = TypeEnv [Variable (TFun [TBool] TInt) "f"]
+
 typeTests :: [TestCase] -> Spec
 typeTests testCases = do
   describe "Type inference unit tests:" $ do
@@ -85,6 +87,10 @@ typeTests testCases = do
       describe "invalid" $ do
         it "#1 (already in scope)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LInt 1)))) `shouldThrow` anyErrorCall
         it "#2 (same name different type)" $ evaluate (force (typeExpr intTEnv (FunDecl "x" [] (LBool True)))) `shouldThrow` anyErrorCall
+    describe "function application" $ do
+      describe "valid" $ do
+        it "#1 (bool arg)" $ typeExpr funcEnv (FunCall "f" [LBool True]) `shouldBe` (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BoolTExpr True], TInt, funcEnv)
+        it "#2 (binop in arg)" $ typeExpr funcEnv (FunCall "f" [BinOp (LInt 1) OpEq (LInt 2)]) `shouldBe` (FunCallTExpr (Variable (TFun [TBool] TInt) "f") [BinOpTExpr TBool (IntTExpr 1) OpEq (IntTExpr 2)], TInt, funcEnv)
   describe "Type inference full file test cases:" $ do
     fullFileTestCases matchTypeInferenceTestCase
 

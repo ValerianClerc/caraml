@@ -97,10 +97,24 @@ typeExpr env (Parser.FunDecl name args expr) =
   where
     typedArgs = map (\(n, t) -> Variable t n) args
     envWithArgs = foldl addToEnv env typedArgs
-    (typedExpr, returnType, _) = typeExpr envWithArgs expr
+    envWithFun = addToEnv envWithArgs funVar
+    (typedExpr, returnType, _) = typeExpr envWithFun expr
 
     argTypesList = map snd args
     funType = TFun argTypesList returnType
     funVar = Variable funType name
-typeExpr env (Parser.FunCall name args) = undefined
+typeExpr env (Parser.FunCall name args) =
+  if argTypesList == lookUpArgTypes
+    then (FunCallTExpr funVar typedArgs, returnType, env)
+    else error $ "Expected arguments " ++ show lookUpArgTypes ++ " for function " ++ name ++ ", got " ++ show argTypesList
+  where
+    typedArgs = map (\arg -> let (texpr, t, _) = typeExpr env arg in texpr) args
+    argTypesList = map (\arg -> let (_, t, _) = typeExpr env arg in t) args
+    funType = TFun argTypesList returnType
+    funVar = Variable funType name
+    (lookUpArgTypes, returnType) =
+      case getVarType env name of
+        Nothing -> error $ "Function " ++ name ++ " not found in environment"
+        Just (TFun argTypes t) -> (argTypes, t)
+        Just t -> error $ "Expected " ++ name ++ " to be of type TFun, got " ++ show t
 typeExpr env expr = error $ "Type inference not implemented for " ++ show expr
