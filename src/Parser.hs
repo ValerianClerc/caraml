@@ -5,7 +5,9 @@ module Parser where
 
 import Common (Type (TBool, TInt))
 import Control.DeepSeq (NFData)
+import Control.Exception (throw)
 import Data.List.Split
+import Error (ParserException (..))
 import GHC.Generics (Generic)
 import Lexer
 
@@ -34,10 +36,10 @@ runParser input =
 
     checkParseResult :: (Expr, [Token]) -> Expr
     checkParseResult (e, []) = e
-    checkParseResult (_, _) = error "Extra tokens found after end of expression"
+    checkParseResult (_, _) = throw $ ExtraTokens "Extra tokens found after end of expression"
 
 expect :: Token -> [Token] -> [Token]
-expect t (x : xs) = if t == x then xs else error $ "Expected " ++ show t ++ ", found " ++ show x
+expect t (x : xs) = if t == x then xs else throw $ ExpectedToken $ "Expected " ++ show t ++ ", found " ++ show x
 expect _ [] = []
 
 checkNext :: Token -> [Token] -> Bool
@@ -56,7 +58,7 @@ checkNth tokenToMatch i tokens =
     traverse idx (t : ts) = traverse (idx - 1) ts
 
 parseExpr :: [Token] -> (Expr, [Token])
-parseExpr [] = error "parseExpr was called with an empty token list"
+parseExpr [] = throw $ UnexpectedEndOfExpression "parseExpr was called with an empty token list"
 -- parse literals
 parseExpr ((DIGIT i) : xs) = parseExprPrime (PInt i) xs
 parseExpr ((CHAR c) : xs) = parseExprPrime (PChar c) xs
@@ -68,7 +70,7 @@ parseExpr ((IDENT s) : LPAREN : xs) =
    in parseExprPrime (FunCall {funCallName = s, funCallArgs = args}) rest
   where
     parseArgs :: [Token] -> ([Expr], [Token])
-    parseArgs [] = error "Expected RPAREN, found EOF"
+    parseArgs [] = throw $ ExpectedToken "Expected RPAREN, found EOF"
     parseArgs (RPAREN : xs) = ([], xs)
     parseArgs xs =
       let (arg, rest) = parseExpr xs
@@ -88,7 +90,7 @@ parseExpr (FUN : (IDENT s) : LPAREN : xs) = parseExprPrime (FunDecl {funDeclName
     getArgAndType :: [Token] -> (String, Type)
     getArgAndType [IDENT i, COLON, KBOOL] = (i, TBool)
     getArgAndType [IDENT i, COLON, KINT] = (i, TInt)
-    getArgAndType t = error $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
+    getArgAndType t = throw $ InvalidFunctionDeclarationArgs $ "Expected identifier and type in function declaration arguments, but found: " ++ show t
     args = map getArgAndType splitArgs
 
     rest' = expect EQU $ expect RPAREN rest -- discard trailing RPAREN and equal sign
@@ -102,17 +104,17 @@ parseExpr (LET : (IDENT s) : EQU : xs) =
 
 -- parsing if-then-else
 -- TODO: handle nested ifs (if (if x then true else false) then 1 else 2)
-parseExpr (IF : xs) =
-  if not (null restOfIfExpr) || not (null restOfThenExpr)
-    then error "Expected end of expression in if-then statement"
-    else parseExprPrime (Conditional {condBool = ifExpr, condIf = thenExpr, condElse = elseExpr}) rest''
+parseExpr (IF : xs)
+  | not (null restOfIfExpr) = throw $ ExpectedEndOfConditional "Expected end of if-condition expression"
+  | not (null restOfThenExpr) = throw $ ExpectedEndOfConditional "Expected end of then-expression"
+  | otherwise = parseExprPrime (Conditional {condBool = ifExpr, condIf = thenExpr, condElse = elseExpr}) rest''
   where
     (ifTokens, rest) = span (/= THEN) xs
     (ifExpr, restOfIfExpr) = parseExpr ifTokens
     (thenTokens, rest') = span (/= ELSE) (expect THEN rest)
     (thenExpr, restOfThenExpr) = parseExpr thenTokens
     (elseExpr, rest'') = parseExpr (expect ELSE rest')
-parseExpr input = error $ "Unimplemented parser case: " ++ show input
+parseExpr input = throw $ UnexpectedToken $ "Unexpected token: " ++ show input
 
 isBinOp :: Token -> Maybe Op
 isBinOp PLUS = Just OpPlus

@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 3.8
 
 name:           caraml
 version:        0.1.0.0
@@ -8,7 +8,7 @@ bug-reports:    https://github.com/ValerianClerc/caraml/issues
 author:         Valerian Clerc
 maintainer:     valerian.clerc@gmail.com
 copyright:      2021 Valerian Clerc
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -25,6 +25,7 @@ library
       Parser
       TypeInfer
       Common
+      Error
   other-modules:
       Paths_caraml
   hs-source-dirs:
