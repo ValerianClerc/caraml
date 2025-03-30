@@ -24,7 +24,7 @@ data Expr
   | FunCall {funCallName :: String, funCallArgs :: [Expr]}
   deriving (Show, Eq, NFData, Generic)
 
-data Op = OpPlus | OpMinus | OpMult | OpDiv | OpEq | OpNeq | OpLt | OpGt | OpLeq | OpGeq deriving (Show, Eq, NFData, Generic)
+data Op = OpPlus | OpMinus | OpMult | OpDiv | OpEq | OpNeq | OpLt | OpGt | OpLeq | OpGeq | OpAnd | OpOr deriving (Show, Eq, NFData, Generic)
 
 runParser :: [Token] -> [Expr]
 runParser [] = []
@@ -127,6 +127,8 @@ isBinOp GRT = Just OpGt
 isBinOp GEQ = Just OpGeq
 isBinOp LST = Just OpLt
 isBinOp LEQ = Just OpLeq
+isBinOp LAND = Just OpAnd
+isBinOp LOR = Just OpOr
 isBinOp _ = Nothing
 
 parseExprPrime :: Expr -> [Token] -> (Expr, [Token])

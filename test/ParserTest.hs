@@ -99,7 +99,9 @@ parserTests testCases = do
         it "#8 (less than)" $ parseExpr [IDENT "x", LST, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpLt (PInt 3), [])
         it "#9 (less than or equal)" $ parseExpr [IDENT "x", LEQ, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpLeq (PInt 3), [])
         it "#10 (not equal)" $ parseExpr [IDENT "x", NEQ, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpNeq (PInt 3), [])
-        it "#11 (nested)" $ parseExpr [IDENT "x", PLUS, IDENT "y", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (VarExpr "y") OpMult (PInt 3)), [])
+        it "#11 (logical and)" $ parseExpr [IDENT "x", LAND, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpAnd (PInt 3), [])
+        it "#12 (logical or)" $ parseExpr [IDENT "x", LOR, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpOr (PInt 3), [])
+        it "#13 (nested)" $ parseExpr [IDENT "x", PLUS, IDENT "y", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (VarExpr "y") OpMult (PInt 3)), [])
       describe "invalid" $ do
         it "#1 (missing LHS)" $ evaluate (parseExpr [PLUS, DIGIT 3]) `shouldThrow` unexpectedToken
         it "#2 (invalid RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS, FUN, DIGIT 3])) `shouldThrow` unexpectedToken

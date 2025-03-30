@@ -40,6 +40,10 @@ data Token
   | BOOLEAN Bool
   | KBOOL -- Keyword boolean
   | KINT -- Keyword int
+  | LAND -- Logical AND
+  | LOR -- Logical OR
+  | TILDE
+  -- TODO: add NOT
   deriving (Show, Eq, NFData, Generic)
 
 runLex :: String -> [Token]
@@ -83,6 +87,9 @@ lexSymbol input@(x : xs) = case x of
   '_' -> UNDERSCORE : runLex xs
   ';' -> SC : runLex xs
   ':' -> COLON : runLex xs
+  '&' -> LAND : runLex xs
+  '|' -> LOR : runLex xs
+  '~' -> TILDE : runLex xs
   _ -> error $ "Invalid character: " ++ [x]
 
 lexParens :: String -> [Token]
