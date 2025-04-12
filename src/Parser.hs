@@ -112,84 +112,114 @@ parseLogicalOrExpr :: [Token] -> (Expr, [Token])
 parseLogicalOrExpr [] = throw $ UnexpectedEndOfExpression "parseLogicalOrExpr was called with an empty token list"
 parseLogicalOrExpr (x : xs) =
   let (leftExpr, rest) = parseLogicalAndExpr (x : xs)
-   in case rest of
-        (LOR : _) ->
-          let (rightExpr, rest') = parseLogicalOrExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpOr, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseLogicalOrExprRest leftExpr rest
+  where
+    parseLogicalOrExprRest :: Expr -> [Token] -> (Expr, [Token])
+    parseLogicalOrExprRest expr [] = (expr, [])
+    parseLogicalOrExprRest expr (LOR : rest) =
+      let (rightExpr, rest') = parseLogicalAndExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpOr, binOpRight = rightExpr}
+       in parseLogicalOrExprRest newExpr rest'
+    parseLogicalOrExprRest expr rest = (expr, rest)
 
 -- logical_and_exp ::= equality_exp { "&&" equality_exp }
 parseLogicalAndExpr :: [Token] -> (Expr, [Token])
 parseLogicalAndExpr [] = throw $ UnexpectedEndOfExpression "parseLogicalAndExpr was called with an empty token list"
 parseLogicalAndExpr (x : xs) =
   let (leftExpr, rest) = parseEqualityExpr (x : xs)
-   in case rest of
-        (LAND : _) ->
-          let (rightExpr, rest') = parseLogicalAndExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpAnd, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseLogicalAndExprRest leftExpr rest
+  where
+    parseLogicalAndExprRest :: Expr -> [Token] -> (Expr, [Token])
+    parseLogicalAndExprRest expr [] = (expr, [])
+    parseLogicalAndExprRest expr (LAND : rest) =
+      let (rightExpr, rest') = parseEqualityExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpAnd, binOpRight = rightExpr}
+       in parseLogicalAndExprRest newExpr rest'
+    parseLogicalAndExprRest expr rest = (expr, rest)
 
 -- equality_exp ::= relational_exp { ("!=" | "==") relational_exp }
 parseEqualityExpr :: [Token] -> (Expr, [Token])
 parseEqualityExpr [] = throw $ UnexpectedEndOfExpression "parseEqualityExpr was called with an empty token list"
 parseEqualityExpr (x : xs) =
   let (leftExpr, rest) = parseRelationalExpr (x : xs)
-   in case rest of
-        (EQU : _) ->
-          let (rightExpr, rest') = parseEqualityExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpEq, binOpRight = rightExpr}, rest')
-        (NEQ : _) ->
-          let (rightExpr, rest') = parseEqualityExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpNeq, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseEqualityExprRest leftExpr rest
+  where
+    parseEqualityExprRest :: Expr -> [Token] -> (Expr, [Token])
+    parseEqualityExprRest expr [] = (expr, [])
+    parseEqualityExprRest expr (EQU : rest) =
+      let (rightExpr, rest') = parseRelationalExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpEq, binOpRight = rightExpr}
+       in parseEqualityExprRest newExpr rest'
+    parseEqualityExprRest expr (NEQ : rest) =
+      let (rightExpr, rest') = parseRelationalExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpNeq, binOpRight = rightExpr}
+       in parseEqualityExprRest newExpr rest'
+    parseEqualityExprRest expr rest = (expr, rest)
 
 -- relational_exp ::= additive_exp { ("<" | ">" | "<=" | ">=") additive_exp }
 parseRelationalExpr :: [Token] -> (Expr, [Token])
 parseRelationalExpr [] = throw $ UnexpectedEndOfExpression "parseRelationalExpr was called with an empty token list"
 parseRelationalExpr (x : xs) =
   let (leftExpr, rest) = parseAdditiveExpr (x : xs)
-   in case rest of
-        (LST : _) ->
-          let (rightExpr, rest') = parseRelationalExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpLt, binOpRight = rightExpr}, rest')
-        (GRT : _) ->
-          let (rightExpr, rest') = parseRelationalExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpGt, binOpRight = rightExpr}, rest')
-        (LEQ : _) ->
-          let (rightExpr, rest') = parseRelationalExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpLeq, binOpRight = rightExpr}, rest')
-        (GEQ : _) ->
-          let (rightExpr, rest') = parseRelationalExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpGeq, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseRelationalExprRest leftExpr rest
+  where
+    parseRelationalExprRest :: Expr -> [Token] -> (Expr, [Token])
+    parseRelationalExprRest expr [] = (expr, [])
+    parseRelationalExprRest expr (LST : rest) =
+      let (rightExpr, rest') = parseAdditiveExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpLt, binOpRight = rightExpr}
+       in parseRelationalExprRest newExpr rest'
+    parseRelationalExprRest expr (GRT : rest) =
+      let (rightExpr, rest') = parseAdditiveExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpGt, binOpRight = rightExpr}
+       in parseRelationalExprRest newExpr rest'
+    parseRelationalExprRest expr (LEQ : rest) =
+      let (rightExpr, rest') = parseAdditiveExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpLeq, binOpRight = rightExpr}
+       in parseRelationalExprRest newExpr rest'
+    parseRelationalExprRest expr (GEQ : rest) =
+      let (rightExpr, rest') = parseAdditiveExpr rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpGeq, binOpRight = rightExpr}
+       in parseRelationalExprRest newExpr rest'
+    parseRelationalExprRest expr rest = (expr, rest)
 
 -- additive_exp ::= term { ("+" | "-") term }
 parseAdditiveExpr :: [Token] -> (Expr, [Token])
 parseAdditiveExpr [] = throw $ UnexpectedEndOfExpression "parseAdditiveExpr was called with an empty token list"
 parseAdditiveExpr (x : xs) =
   let (leftExpr, rest) = parseTerm (x : xs)
-   in case rest of
-        (PLUS : _) ->
-          let (rightExpr, rest') = parseAdditiveExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpPlus, binOpRight = rightExpr}, rest')
-        (MINUS : _) ->
-          let (rightExpr, rest') = parseAdditiveExpr (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpMinus, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseAdditiveExprRest leftExpr rest
+  where
+    parseAdditiveExprRest :: Expr -> [Token] -> (Expr, [Token])
+    parseAdditiveExprRest expr [] = (expr, [])
+    parseAdditiveExprRest expr (PLUS : rest) =
+      let (rightExpr, rest') = parseTerm rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpPlus, binOpRight = rightExpr}
+       in parseAdditiveExprRest newExpr rest'
+    parseAdditiveExprRest expr (MINUS : rest) =
+      let (rightExpr, rest') = parseTerm rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpMinus, binOpRight = rightExpr}
+       in parseAdditiveExprRest newExpr rest'
+    parseAdditiveExprRest expr rest = (expr, rest)
 
 -- term ::= factor { ("*" | "/") factor }
 parseTerm :: [Token] -> (Expr, [Token])
 parseTerm [] = throw $ UnexpectedEndOfExpression "parseTerm was called with an empty token list"
 parseTerm (x : xs) =
   let (leftExpr, rest) = parseFactor (x : xs)
-   in case rest of
-        (ASTERISK : _) ->
-          let (rightExpr, rest') = parseTerm (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpMult, binOpRight = rightExpr}, rest')
-        (DIVIDE : _) ->
-          let (rightExpr, rest') = parseTerm (tail rest)
-           in (BinOp {binOpLeft = leftExpr, binOp = OpDiv, binOpRight = rightExpr}, rest')
-        _ -> (leftExpr, rest)
+   in parseTermRest leftExpr rest
+  where
+    parseTermRest :: Expr -> [Token] -> (Expr, [Token])
+    parseTermRest expr [] = (expr, [])
+    parseTermRest expr (ASTERISK : rest) =
+      let (rightExpr, rest') = parseFactor rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpMult, binOpRight = rightExpr}
+       in parseTermRest newExpr rest'
+    parseTermRest expr (DIVIDE : rest) =
+      let (rightExpr, rest') = parseFactor rest
+          newExpr = BinOp {binOpLeft = expr, binOp = OpDiv, binOpRight = rightExpr}
+       in parseTermRest newExpr rest'
+    parseTermRest expr rest = (expr, rest)
 
 -- factor ::= "(" exp ")"
 --         | unary_op factor
