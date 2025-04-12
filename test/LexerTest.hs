@@ -65,9 +65,8 @@ lexTests testCases = do
       it "_" $ lexSymbol "_" `shouldBe` [UNDERSCORE, EOF]
       it ";" $ lexSymbol ";" `shouldBe` [SC, EOF]
       it ":" $ lexSymbol ":" `shouldBe` [COLON, EOF]
-      it "&" $ lexSymbol "&" `shouldBe` [LAND, EOF]
-      it "|" $ lexSymbol "|" `shouldBe` [LOR, EOF]
-      it "~" $ lexSymbol "~" `shouldBe` [TILDE, EOF]
+      it "&&" $ lexSymbol "&&" `shouldBe` [LAND, EOF]
+      it "||" $ lexSymbol "||" `shouldBe` [LOR, EOF]
       it "Invalid symbol error" $ evaluate (lexSymbol "@") `shouldThrow` anyErrorCall
     describe "lexString" $ do
       it "normal string" $ lexString "\"hello\"" `shouldBe` [STRING "hello", EOF]

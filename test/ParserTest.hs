@@ -65,28 +65,28 @@ parserTests testCases = do
       describe "invalid if" $ do
         it "#1 (missing THEN)" $ evaluate (parseExpr [IF, IDENT "x", LST, DIGIT 0, IDENT "x", ELSE, IDENT "y"]) `shouldThrow` endOfconditional
         it "#2 (invalid predicate)" $ evaluate (parseExpr [IF, EQU, THEN, IDENT "x", ELSE, IDENT "y"]) `shouldThrow` unexpectedToken
-        it "#3 (invalid else)" $ evaluate (parseExpr [IF, BOOLEAN True, THEN, IDENT "x", ELSE, FUN]) `shouldThrow` unexpectedToken
+        it "#3 (invalid else)" $ evaluate (force (parseExpr [IF, BOOLEAN True, THEN, IDENT "x", ELSE, FUN])) `shouldThrow` unexpectedToken
     describe "variable declaration" $ do
       describe "valid" $ do
         it "#1" $ parseExpr [LET, IDENT "x", EQU, DIGIT 3] `shouldBe` (Let "x" (PInt 3), [])
       describe "invalid" $ do
-        it "#1 (missing variable identifier)" $ evaluate (parseExpr [LET, EQU, DIGIT 3]) `shouldThrow` unexpectedToken
-        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [LET, IDENT "x", DIGIT 3, EQU, BOOLEAN True]) `shouldThrow` unexpectedToken
+        it "#1 (missing variable identifier)" $ evaluate (parseExprOrDecl [LET, EQU, DIGIT 3]) `shouldThrow` unexpectedToken
+        it "#2 (extra digit after identifier)" $ evaluate (parseExprOrDecl [LET, IDENT "x", DIGIT 3, EQU, BOOLEAN True]) `shouldThrow` unexpectedToken
     describe "function declaration" $ do
       describe "valid" $ do
-        it "#1" $ parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"] `shouldBe` (FunDecl "x" [("p1", TBool), ("p2", TInt)] (VarExpr "p1"), [])
+        it "#1" $ parseExprOrDecl [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"] `shouldBe` (FunDecl "x" [("p1", TBool), ("p2", TInt)] (VarExpr "p1"), [])
       describe "invalid" $ do
-        it "#1 (missing right parens)" $ evaluate (force parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, EQU, IDENT "p1"]) `shouldThrow` unexpectedEndOfExpression
-        it "#2 (extra digit after identifier)" $ evaluate (parseExpr [FUN, IDENT "x", DIGIT 3, LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"]) `shouldThrow` unexpectedToken
-        it "#3 (missing comma)" $ evaluate (force (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"])) `shouldThrow` invalidFunctionArgs
-        it "#4 (missing type annotations)" $ evaluate (force (parseExpr [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"])) `shouldThrow` invalidFunctionArgs
+        it "#1 (missing right parens)" $ evaluate (force (parseExprOrDecl [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, EQU, IDENT "p1"])) `shouldThrow` invalidFunctionArgs
+        it "#2 (extra digit after identifier)" $ evaluate (parseExprOrDecl [FUN, IDENT "x", DIGIT 3, LPAREN, IDENT "p1", COLON, KBOOL, COMMA, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"]) `shouldThrow` unexpectedToken
+        it "#3 (missing comma)" $ evaluate (force (parseExprOrDecl [FUN, IDENT "x", LPAREN, IDENT "p1", COLON, KBOOL, IDENT "p2", COLON, KINT, RPAREN, EQU, IDENT "p1"])) `shouldThrow` invalidFunctionArgs
+        it "#4 (missing type annotations)" $ evaluate (force (parseExprOrDecl [FUN, IDENT "x", LPAREN, IDENT "p1", COMMA, IDENT "p2", RPAREN, EQU, IDENT "p1"])) `shouldThrow` invalidFunctionArgs
     describe "function application" $ do
       describe "valid" $ do
         it "#1" $ parseExpr [IDENT "x", LPAREN, DIGIT 3, COMMA, IDENT "p2", RPAREN] `shouldBe` (FunCall "x" [PInt 3, VarExpr "p2"], [])
         it "#2 (empty args)" $ parseExpr [IDENT "x", LPAREN, RPAREN] `shouldBe` (FunCall "x" [], [])
       describe "invalid" $ do
-        it "#1 (missing right parens)" $ evaluate (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"]) `shouldThrow` expectedToken
-        it "#2 (no comma)" $ evaluate (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"]) `shouldThrow` expectedToken
+        it "#1 (missing right parens)" $ evaluate (force (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"])) `shouldThrow` expectedToken
+        it "#2 (no comma)" $ evaluate (force (parseExpr [IDENT "x", LPAREN, DIGIT 3, IDENT "p2"])) `shouldThrow` expectedToken
     describe "binary operation" $ do
       describe "valid" $ do
         it "#1 (plus)" $ parseExpr [IDENT "x", PLUS, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (PInt 3), [])
@@ -102,8 +102,11 @@ parserTests testCases = do
         it "#11 (logical and)" $ parseExpr [IDENT "x", LAND, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpAnd (PInt 3), [])
         it "#12 (logical or)" $ parseExpr [IDENT "x", LOR, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpOr (PInt 3), [])
         it "#13 (nested)" $ parseExpr [IDENT "x", PLUS, IDENT "y", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (VarExpr "y") OpMult (PInt 3)), [])
+        it "#14 (unary)" $ parseExpr [PLUS, DIGIT 3] `shouldBe` (BinOp (PInt 0) OpPlus (PInt 3), [])
+        it "#15 (unary minus)" $ parseExpr [MINUS, DIGIT 3] `shouldBe` (BinOp (PInt 0) OpMinus (PInt 3), [])
+        it "#16 (unary not)" $ parseExpr [NOT, DIGIT 3] `shouldBe` (BinOp (PBool False) OpNot (PInt 3), [])
+        it "#17 (operator precedence)" $ parseExpr [IDENT "x", PLUS, DIGIT 3, ASTERISK, IDENT "y"] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (PInt 3) OpMult (VarExpr "y")), [])
       describe "invalid" $ do
-        it "#1 (missing LHS)" $ evaluate (parseExpr [PLUS, DIGIT 3]) `shouldThrow` unexpectedToken
         it "#2 (invalid RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS, FUN, DIGIT 3])) `shouldThrow` unexpectedToken
         it "#3 (missing RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS])) `shouldThrow` unexpectedEndOfExpression
   -- TODO: implement operator precedence + associativity

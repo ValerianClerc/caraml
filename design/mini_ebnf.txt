@@ -1,22 +1,36 @@
 # Source inspiration (with modifications): https://esumii.github.io/min-caml/index-e.html
 
 program ::=
-        (e;)+
+        ((exp | decl);)+
 
-e ::=   expressions
-        c e'                   # constants (int, string, or boolean)
-        if e1 then e2 else e3 e'   # conditional branches
-        let x = e1            # variable definitions
-        x e'                  # variables (identifier x)
-        fun x (y1: t1, y2: t2, ... yn: tn) = e e'     # function definitions
-        x(e1 ... en) e'        # function applications
+decl ::= fun IDENT (x1: t1, x2: t2, ... xn: tn) = exp3
 
-        # Will add these later:
-        # (e1, ..., en)       # tuple creations
-        # let (x1, ..., xn) = e1 in e2    # read from tuples
+exp  ::= logical_or_exp
+        | if exp1 then exp2 else exp3
+        | let IDENT = exp1 in exp2
 
-e' ::=  op e2            # binary operators (+, -, *, /, =, <>, <, >, <=, >=)
-        E           # empty
+logical_or_exp ::= logical_and_exp { "||" logical_and_exp }
+
+logical_and_exp ::= equality_exp { "&&" equality_exp }
+
+equality_exp ::= relational_exp { ("!=" | "==") relational_exp }
+
+relational_exp ::= additive_exp { ("<" | ">" | "<=" | ">=") additive_exp }
+
+additive_exp ::= term { ("+" | "-") term }
+
+term ::= factor { ("*" | "/") factor }
+
+factor ::= "(" exp ")"
+        | unary_op factor
+        | IDENT     # variable expression
+        | STRING
+        | INT
+        | CHAR
+        | BOOL
+        | x(e1, ... en)
+
+unary_op ::= "!" | "+" | "-"
 
 T ::= types
         π   # primitive types

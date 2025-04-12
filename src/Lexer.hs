@@ -26,6 +26,7 @@ data Token
   | THEN
   | ELSE
   | LET
+  | IN
   | REC
   | COMMA
   | DOT
@@ -42,8 +43,6 @@ data Token
   | KINT -- Keyword int
   | LAND -- Logical AND
   | LOR -- Logical OR
-  | TILDE
-  -- TODO: add NOT
   deriving (Show, Eq, NFData, Generic)
 
 runLex :: String -> [Token]
@@ -87,9 +86,23 @@ lexSymbol input@(x : xs) = case x of
   '_' -> UNDERSCORE : runLex xs
   ';' -> SC : runLex xs
   ':' -> COLON : runLex xs
-  '&' -> LAND : runLex xs
-  '|' -> LOR : runLex xs
-  '~' -> TILDE : runLex xs
+  '&' ->
+    if null xs
+      then error "Bitwise AND operator '&' is not allowed"
+      else
+        let y : ys = xs
+         in case y of
+              '&' -> LAND : runLex ys
+              _ -> error "Bitwise AND operator '&' is not allowed"
+  '|' ->
+    if null xs
+      then error "Bitwise OR operator '|' is not allowed"
+      else
+        let y : ys = xs
+         in case y of
+              '|' -> LOR : runLex ys
+              _ -> error "Bitwise OR operator '|' is not allowed"
+  '!' -> NOT : runLex xs
   _ -> error $ "Invalid character: " ++ [x]
 
 lexParens :: String -> [Token]
