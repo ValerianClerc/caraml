@@ -42,7 +42,7 @@ jobs:
     - name: Run tests
       run: cabal test all --test-show-details='always' --enable-coverage
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: hpc-codecov
         path: ./dist-newstyle/build/**/hpc/vanilla/html/caraml-test/*
