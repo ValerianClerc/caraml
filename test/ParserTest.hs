@@ -106,6 +106,10 @@ parserTests testCases = do
         it "#15 (unary minus)" $ parseExpr [MINUS, DIGIT 3] `shouldBe` (BinOp (PInt 0) OpMinus (PInt 3), [])
         it "#16 (unary not)" $ parseExpr [NOT, DIGIT 3] `shouldBe` (BinOp (PBool False) OpNot (PInt 3), [])
         it "#17 (operator precedence)" $ parseExpr [IDENT "x", PLUS, DIGIT 3, ASTERISK, IDENT "y"] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (PInt 3) OpMult (VarExpr "y")), [])
+        it "#18 (operator precedence with parentheses)" $ parseExpr [IDENT "x", PLUS, LPAREN, DIGIT 3, ASTERISK, IDENT "y", RPAREN] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (PInt 3) OpMult (VarExpr "y")), [])
+        it "#19 (operator precedence with parentheses and unary)" $ parseExpr [IDENT "x", PLUS, LPAREN, DIGIT 3, ASTERISK, IDENT "y", RPAREN, MINUS, DIGIT 2] `shouldBe` (BinOp (BinOp (VarExpr "x") OpPlus (BinOp (PInt 3) OpMult (VarExpr "y"))) OpMinus (PInt 2), [])
+        it "#20 (operator associativity)" $ parseExpr [IDENT "x", PLUS, IDENT "y", PLUS, DIGIT 3] `shouldBe` (BinOp (BinOp (VarExpr "x") OpPlus (VarExpr "y")) OpPlus (PInt 3), [])
+        it "#21 (operator associativity and precedence)" $ parseExpr [IDENT "x", PLUS, IDENT "y", ASTERISK, DIGIT 3] `shouldBe` (BinOp (VarExpr "x") OpPlus (BinOp (VarExpr "y") OpMult (PInt 3)), [])
       describe "invalid" $ do
         it "#2 (invalid RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS, FUN, DIGIT 3])) `shouldThrow` unexpectedToken
         it "#3 (missing RHS)" $ evaluate (force (parseExpr [IDENT "x", PLUS])) `shouldThrow` unexpectedEndOfExpression

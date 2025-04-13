@@ -125,6 +125,6 @@ testCases =
       { rawTestCase = "1 + 2 + 3;",
         lexedTestCase = [DIGIT 1, PLUS, DIGIT 2, PLUS, DIGIT 3, SC, EOF],
         parsedTestCase = [BinOp (BinOp (PInt 1) OpPlus (PInt 2)) OpPlus (PInt 3)],
-        typedTestCase = [BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 1, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 2, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 3}}]
+        typedTestCase = [BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 1, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 2}, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 3}]
       }
   ]
