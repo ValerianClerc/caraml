@@ -1,5 +1,6 @@
 import LexerTest
 import Lib
+import LlvmTest (llvmTests)
 import ParserTest
 import Test.Hspec
 import TestCases
@@ -26,3 +27,4 @@ main = do
     lexTests testCases
     parserTests testCases
     typeTests testCases
+    llvmTests testCases

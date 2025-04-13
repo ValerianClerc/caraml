@@ -29,3 +29,12 @@ src/                  # majority of source code
 test/                 # test suite
 caraml.cabal          # config file for the cabal package
 ```
+
+## Very useful references/blogs
+* [LLVM basics in Haskell](https://danieljharvey.github.io/posts/2023-02-08-llvm-compiler-part-1.html)
+
+## Notes to self
+
+* Currently I'm using GHC 8.10.7, because the llvm-hs-pretty package has some breaking components. In the future, I'd like to move back to GHC 9. Here are the things that I'd need to do:
+  * Switch the llvm-hs-pretty branch to the llvm-12 branch
+  * Ensure that I'm also using the llvm-12 branch of llvm-hs-pure
