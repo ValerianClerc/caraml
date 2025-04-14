@@ -3,7 +3,7 @@ module LlvmTest where
 import Parser
 import Test.Hspec
 import TestCases
-import ToLlvm (generateLlvm)
+import ToLlvm
 import TypeInfer
 
 -- llvmTests :: [TestCase] -> Spec
