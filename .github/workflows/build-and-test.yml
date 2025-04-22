@@ -19,7 +19,7 @@ jobs:
     - uses: actions/setup-haskell@v1
       with:
         ghc-version: '8.10.3'
-        cabal-version: '3.2'
+        cabal-version: '3.10'
 
     - name: Cache
       uses: actions/cache@v3
@@ -42,7 +42,7 @@ jobs:
     - name: Run tests
       run: cabal test all --test-show-details='always' --enable-coverage
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: hpc-codecov
         path: ./dist-newstyle/build/**/hpc/vanilla/html/caraml-test/*
