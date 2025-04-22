@@ -1,10 +1,10 @@
 import LexerTest
 import Lib
-import LlvmTest (llvmTests)
 import ParserTest
 import Test.Hspec
 import TestCases
 import TypeTest (typeTests)
+import LlvmTest (llvmTests)
 
 fileName = "./test/file.cml"
 
