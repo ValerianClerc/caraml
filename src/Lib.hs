@@ -5,6 +5,7 @@ data Selection = Invalid | Lexer | Parser | TypeCheck | ToLlvm deriving (Show, E
 type FileName = String
 
 handleArgs :: [String] -> (Selection, FileName)
+handleArgs [] = (Invalid, "")
 handleArgs strs@(flag : rest)
   | length strs /= 2 = (Invalid, "")
   | flag == "--lexer" = (Lexer, head rest)

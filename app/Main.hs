@@ -4,8 +4,9 @@ import Lexer
 import Lib
 import Parser
 import System.Environment
+import System.FilePath
 import System.IO
-import ToLlvm (toLLVM, printLlvm)
+import ToLlvm (printLlvm, toLLVM)
 import TypeInfer (runTyper)
 
 main :: IO ()
@@ -30,7 +31,9 @@ main = do
         runTyper . runParser . runLex $
           contents
     ToLlvm ->
-      print $
-        printLlvm . toLLVM . runTyper . runParser . runLex $
-          contents
+      do
+        let llvmIrString = printLlvm . toLLVM . runTyper . runParser . runLex $ contents
+        let outputFilePath = System.FilePath.replaceExtension filePath ".ll"
+        writeFile outputFilePath llvmIrString
+        putStrLn $ "LLVM IR written to " ++ outputFilePath
     Invalid -> putStrLn "Invalid parameters"
