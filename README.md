@@ -38,3 +38,6 @@ caraml.cabal          # config file for the cabal package
 * Currently I'm using GHC 8.10.7, because the llvm-hs-pretty package has some breaking components. In the future, I'd like to move back to GHC 9. Here are the things that I'd need to do:
   * Switch the llvm-hs-pretty branch to the llvm-12 branch
   * Ensure that I'm also using the llvm-12 branch of llvm-hs-pure
+
+
+* Add make script: `clang -Wno-override-module -lm test.ll test.c -o a.out`

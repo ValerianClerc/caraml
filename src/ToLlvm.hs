@@ -81,6 +81,9 @@ binopToLLVM op lhs rhs = do
     OpLeq -> icmp LLVM.AST.IntegerPredicate.SLE lhs rhs
     OpGeq -> icmp LLVM.AST.IntegerPredicate.SGE lhs rhs
     OpEq -> icmp LLVM.AST.IntegerPredicate.EQ lhs rhs
+    OpOr -> LLVM.IRBuilder.Instruction.or lhs rhs
+    OpAnd -> LLVM.IRBuilder.Instruction.and lhs rhs
+    OpNeq -> icmp LLVM.AST.IntegerPredicate.NE lhs rhs
     _ -> error "Unsupported binary operator"
 
 typeToLLVM :: Common.Type -> LLVM.AST.Type

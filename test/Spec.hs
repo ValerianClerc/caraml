@@ -1,10 +1,10 @@
 import LexerTest
 import Lib
+import LlvmTest (llvmSpec)
 import ParserTest
 import Test.Hspec
 import TestCases
 import TypeTest (typeTests)
-import LlvmTest (llvmTests)
 
 fileName = "./test/file.cml"
 
@@ -27,4 +27,4 @@ main = do
     lexTests testCases
     parserTests testCases
     typeTests testCases
-    llvmTests testCases
+    llvmSpec testCases
