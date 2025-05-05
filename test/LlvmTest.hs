@@ -4,15 +4,11 @@
 module LlvmTest where
 
 import Common (Type (..))
+import Compile (compileAndRun)
 import Parser (Op (..))
-import System.Directory (removeFile)
-import System.Exit (ExitCode (..))
-import System.IO (readFile, writeFile)
-import System.Process (readProcessWithExitCode, waitForProcess)
 import Test.Hspec
 import TestCases (TestCase)
-import TestUtils (compileAndRun, fullFileTestCases, matchLlvmTestCase)
-import Text.Read (readMaybe)
+import TestUtils (fullFileTestCases, matchLlvmTestCase)
 import ToLlvm (printLlvm, toLLVM)
 import TypeInfer (Identifier (..), TypedExpr (..))
 

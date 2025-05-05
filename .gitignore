@@ -1,3 +1,6 @@
 *~
 .DS_Store
 dist-newstyle/
+.hpc
+hpc_report
+caraml-test.tix

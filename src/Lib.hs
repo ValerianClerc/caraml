@@ -1,6 +1,6 @@
 module Lib where
 
-data Selection = Invalid | Lexer | Parser | TypeCheck | ToLlvm deriving (Show, Eq)
+data Selection = Invalid | Lexer | Parser | TypeCheck | ToLlvm | CompileAndRun deriving (Show, Eq)
 
 type FileName = String
 
@@ -12,4 +12,5 @@ handleArgs strs@(flag : rest)
   | flag == "--parser" = (Parser, head rest)
   | flag == "--typecheck" = (TypeCheck, head rest)
   | flag == "--llvm" = (ToLlvm, head rest)
+  | flag == "--compile-and-run" = (CompileAndRun, head rest)
   | otherwise = (Invalid, "")

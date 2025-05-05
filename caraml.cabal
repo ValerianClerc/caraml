@@ -27,6 +27,7 @@ library
       Common
       Error
       ToLlvm
+      Compile
   other-modules:
       Paths_caraml
   hs-source-dirs:
@@ -39,6 +40,8 @@ library
     , llvm-hs-pretty
     , text
     , containers
+    , directory
+    , process
   default-language: Haskell2010
 
 executable caraml-exe
@@ -80,6 +83,4 @@ test-suite caraml-test
     , mtl
     , llvm-hs-pure
     , llvm-hs-pretty
-    , directory
-    , process
   default-language: Haskell2010
