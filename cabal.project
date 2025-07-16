@@ -1,1 +1,11 @@
 packages: .
+
+constraints:
+  llvm-hs-pure >= 9.0.0 && < 10.0.0,
+  llvm-hs-pretty >= 0.9.0 && < 1.0.0
+
+with-compiler: ghc-8.10.7
+
+-- WASM compilation preparation
+package caraml
+  ghc-options: -fllvm -optlc -O3
