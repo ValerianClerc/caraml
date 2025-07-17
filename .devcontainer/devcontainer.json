@@ -2,8 +2,12 @@
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
     "ghcr.io/devcontainers-extra/features/haskell:2": {
+      "installHLS": true,
+      "installStack": false,
       "ghcVersion": "recommended",
-      "installStack": false
+      "cabalVersion": "recommended",
+      "globalPackages": "hlint",
+      "globalLibraries": "hspec hspec-contrib QuickCheck HUnit"
     }
   }
 }
