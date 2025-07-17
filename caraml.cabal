@@ -36,8 +36,8 @@ library
       base >=4.7 && <5
     , split
     , deepseq
-    , llvm-hs-pure
-    , llvm-hs-pretty
+    , llvm-hs-pure >= 9.0.0 && < 10.0.0
+    , llvm-hs-pretty >= 0.9.0 && < 1.0.0
     , text
     , containers
     , directory
@@ -81,6 +81,6 @@ test-suite caraml-test
     , text
     , containers
     , mtl
-    , llvm-hs-pure
-    , llvm-hs-pretty
+    , llvm-hs-pure >= 9.0.0 && < 10.0.0
+    , llvm-hs-pretty >= 0.9.0 && < 1.0.0
   default-language: Haskell2010
