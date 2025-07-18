@@ -1,6 +1,7 @@
 module Main where
 
 import Compile (compileAndRun)
+import qualified Data.ByteString as BS
 import Lexer
 import Lib
 import Parser
@@ -34,9 +35,9 @@ main = do
           contents
     ToLlvm ->
       do
-        let llvmIrString = printLlvm . toLLVM . runTyper . runParser . runLex $ contents
+        llvmIrString <- printLlvm . toLLVM . runTyper . runParser . runLex $ contents
         let outputFilePath = System.FilePath.replaceExtension filePath ".ll"
-        writeFile outputFilePath llvmIrString
+        BS.writeFile outputFilePath llvmIrString
         putStrLn $ "LLVM IR written to " ++ outputFilePath
     CompileAndRun ->
       do

@@ -1,22 +1,30 @@
 module Compile where
 
+import qualified Data.ByteString as BS
+import qualified Data.Text as T
 import GHC.IO.Exception (ExitCode (ExitSuccess))
+import LLVM.Context (withContext)
+import LLVM.Module (moduleLLVMAssembly, withModuleFromAST)
 import System.Directory (removeFile)
 import System.Process (readProcessWithExitCode)
 import Text.Read (readMaybe)
-import ToLlvm (printLlvm, toLLVM)
+import ToLlvm (toLLVM)
 import TypeInfer (TypedExpr)
+
+runtimeSrc :: String
+runtimeSrc = "./runtime/runtime.c"
 
 compileAndRun :: [TypedExpr] -> IO (Maybe Int)
 compileAndRun exprs = do
   let llvmModule = toLLVM exprs
-  let llvmIR = printLlvm llvmModule
+  llvmIR <- withContext $ \context ->
+    withModuleFromAST context llvmModule $ \m ->
+      moduleLLVMAssembly m
 
   let llFile = "temp_test.ll"
   let objFile = "temp_test.o"
   let exeFile = "temp_test_exe"
-  let runtimeSrc = "runtime/runtime.c"
-  writeFile llFile llvmIR
+  BS.writeFile llFile llvmIR
 
   (exitCodeClang, _, stderrClang) <-
     readProcessWithExitCode "clang" ["-Wno-override-module", "-lm", llFile, runtimeSrc, "-o", exeFile] ""

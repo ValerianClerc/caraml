@@ -9,29 +9,32 @@ import qualified Data.Map.Strict as Map
 import Data.String (fromString)
 import Data.Text.Lazy as T
 import Data.Text.Lazy.IO as T
+import LLVM (withModuleFromAST)
 import LLVM.AST
 import LLVM.AST.Constant
 import LLVM.AST.Global
 import LLVM.AST.IntegerPredicate
 import LLVM.AST.Operand
 import LLVM.AST.Type
+import LLVM.Context (withContext)
 import LLVM.IRBuilder
 import LLVM.IRBuilder.Constant
 import LLVM.IRBuilder.Instruction
 import LLVM.IRBuilder.Module
 import LLVM.IRBuilder.Monad
-import LLVM.Pretty
+import LLVM.Module (moduleLLVMAssembly)
+import LLVM.Prelude (ByteString, join)
 import Parser (Op (..))
 import TypeInfer
 
 -- Symbol table to store variable name to LLVM operand mappings
 type SymbolTable = Map.Map String Operand
 
-printLlvm :: LLVM.AST.Module -> String
-printLlvm = T.unpack . ppllvm
-
-printLlvmExpr :: LLVM.AST.Operand -> String
-printLlvmExpr = T.unpack . ppll
+printLlvm :: LLVM.AST.Module -> IO ByteString
+printLlvm llvmModule = do
+  withContext $ \context ->
+    withModuleFromAST context llvmModule $ \m ->
+      moduleLLVMAssembly m
 
 toLLVM :: [TypedExpr] -> LLVM.AST.Module
 toLLVM exprs =
@@ -57,11 +60,31 @@ toLLVM exprs =
 
       -- Print the last result (or 0 if empty)
       let lastResult = if Prelude.null results then intToLLVM 0 else Prelude.last results
-      -- Print the result
-      _ <- LLVM.IRBuilder.Instruction.call printInt [(lastResult, [])]
+      _ <- printOperand printInt printBool lastResult
 
       -- return 0
       LLVM.IRBuilder.Instruction.ret (LLVM.IRBuilder.Constant.int32 0)
+
+printOperand ::
+  ( LLVM.IRBuilder.Monad.MonadIRBuilder m,
+    LLVM.IRBuilder.Module.MonadModuleBuilder m
+  ) =>
+  LLVM.AST.Operand.Operand ->
+  LLVM.AST.Operand.Operand ->
+  LLVM.AST.Operand.Operand ->
+  m LLVM.AST.Operand.Operand
+printOperand printInt printBool operand =
+  case operandType operand of
+    LLVM.AST.Type.IntegerType 32 ->
+      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.i32 [LLVM.AST.Type.i32] False) printInt [(operand, [])]
+    LLVM.AST.Type.IntegerType 1 ->
+      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.i32 [LLVM.AST.Type.i1] False) printBool [(operand, [])]
+    _ -> error $ "Unsupported operand type for printing: " ++ show (operandType operand)
+  where
+    operandType (LocalReference t _) = t
+    operandType (ConstantOperand (Int 32 _)) = LLVM.AST.Type.i32
+    operandType (ConstantOperand (Int 1 _)) = LLVM.AST.Type.i1
+    operandType other = error $ "Unable to determine operand type for printing: " ++ show other
 
 intToLLVM :: Int -> LLVM.AST.Operand.Operand
 intToLLVM i = LLVM.AST.Operand.ConstantOperand $ LLVM.AST.Constant.Int 32 (fromIntegral i)
@@ -69,7 +92,7 @@ intToLLVM i = LLVM.AST.Operand.ConstantOperand $ LLVM.AST.Constant.Int 32 (fromI
 boolToLLVM :: Bool -> LLVM.AST.Operand.Operand
 boolToLLVM b = LLVM.AST.Operand.ConstantOperand $ LLVM.AST.Constant.Int 1 (if b then 1 else 0)
 
-binopToLLVM :: Op -> LLVM.AST.Operand.Operand -> LLVM.AST.Operand.Operand -> LLVM.IRBuilder.Monad.MonadIRBuilder m => m LLVM.AST.Operand.Operand
+binopToLLVM :: (LLVM.IRBuilder.Monad.MonadIRBuilder m, LLVM.IRBuilder.Module.MonadModuleBuilder m) => Op -> LLVM.AST.Operand.Operand -> LLVM.AST.Operand.Operand -> m LLVM.AST.Operand.Operand
 binopToLLVM op lhs rhs = do
   case op of
     OpPlus -> LLVM.IRBuilder.Instruction.add lhs rhs
@@ -177,7 +200,7 @@ funCallToLLVM ::
   TypeInfer.Identifier ->
   [TypedExpr] ->
   m (SymbolTable, LLVM.AST.Operand.Operand)
-funCallToLLVM symTable (TypeInfer.Variable (TFun _ retType) fnName) args = do
+funCallToLLVM symTable (TypeInfer.Variable (TFun argTypes retType) fnName) args = do
   (symTable', argVals) <-
     foldM
       ( \(st, vals) expr -> do
@@ -187,14 +210,10 @@ funCallToLLVM symTable (TypeInfer.Variable (TFun _ retType) fnName) args = do
       (symTable, [])
       args
 
-  result <-
-    call
-      ( ConstantOperand $
-          GlobalReference
-            (ptr (FunctionType (typeToLLVM retType) (Prelude.map operandType argVals) False))
-            (fromString fnName)
-      )
-      [(val, []) | val <- argVals]
+  let fnType = TFun argTypes retType
+      fnOperand = ConstantOperand $ GlobalReference (fromString fnName)
+
+  result <- LLVM.IRBuilder.Instruction.call (typeToLLVM fnType) fnOperand [(val, []) | val <- argVals]
 
   pure (symTable', result)
   where
