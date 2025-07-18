@@ -14,7 +14,7 @@ import TypeInfer (TypedExpr)
 runtimeSrc :: String
 runtimeSrc = "./runtime/runtime.c"
 
-compileAndRun :: [TypedExpr] -> IO (Maybe Int)
+compileAndRun :: [TypedExpr] -> IO (Maybe String)
 compileAndRun exprs = do
   let llvmModule = toLLVM exprs
   llvmIR <- withContext $ \context ->
@@ -43,4 +43,4 @@ compileAndRun exprs = do
           putStrLn $ "Execution failed: " ++ stderrRun
           return Nothing
         else do
-          return $ readMaybe (filter (/= '\n') stdoutRun)
+          return $ Just (filter (/= '\n') stdoutRun)

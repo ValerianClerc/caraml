@@ -6,7 +6,11 @@ void printint(int i)
   printf("%d", i);
 }
 
-void printbool(int i)
+void printbool(int b)
 {
-  printf("%d", i);
+  if (b) {
+    printf("true");
+  } else {
+    printf("false");
+  }
 }
