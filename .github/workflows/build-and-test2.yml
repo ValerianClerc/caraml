@@ -20,13 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc-version: ['9.8', '9.6', '9.4', '9.2', '9.0']
+        ghc-version: ['9.6']
 
-        include:
-          - os: windows-latest
-            ghc-version: '9.6'
-          - os: macos-latest
-            ghc-version: '9.6'
+        # include:
+        #   - os: windows-latest
+        #     ghc-version: '9.6'
+        #   - os: macos-latest
+        #     ghc-version: '9.6'
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +61,15 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: "15"
+      
+      # - name: Symlink llvm
+      #   run: |
+      #     sudo ln -s /usr/lib/x86_64-linux-gnu/libLLVM-15.so /usr/lib/x86_64-linux-gnu/libLLVM.so
+      
+      - name: Symlink libLLVM-15.so (Linux)
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo ln -s libLLVM-15.so /lib/x86_64-linux-gnu/libLLVM.so
+        working-directory: ${{ env.LLVM_PATH }}/lib
 
       - name: Install dependencies
         # If we had an exact cache hit, the dependencies will be up to date.
