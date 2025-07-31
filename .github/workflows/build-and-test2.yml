@@ -67,7 +67,6 @@ jobs:
               llvm-15-dev \
               llvm-15-tools \
               libllvm15
-          sudo rm /usr/bin/llvm-config
           sudo ln -s /usr/bin/llvm-config-15 /usr/bin/llvm-config
 
 
