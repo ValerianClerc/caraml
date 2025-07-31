@@ -60,7 +60,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "15.0.7"
+          version: "15"
 
       - name: Install dependencies
         # If we had an exact cache hit, the dependencies will be up to date.
