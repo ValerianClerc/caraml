@@ -76,6 +76,13 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: cabal build all --only-dependencies
 
+      - name: Breakpoint if install failed
+        if: failure()
+        uses: namespacelabs/breakpoint-action@v0
+        with:
+          duration: 30m
+          authorized-users: jack123, ValerianClerc
+
       # Cache dependencies already here, so that we do not have to rebuild them should the subsequent steps fail.
       - name: Save cached dependencies
         uses: actions/cache/save@v4
