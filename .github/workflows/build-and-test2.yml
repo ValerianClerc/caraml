@@ -56,20 +56,20 @@ jobs:
           key: ${{ env.key }}-plan-${{ hashFiles('**/plan.json') }}
           restore-keys: ${{ env.key }}-
 
-      # Install LLVM before haskell dependencies because llvm-hs depends on it.
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: "15"
-      
-      # - name: Symlink llvm
-      #   run: |
-      #     sudo ln -s /usr/lib/x86_64-linux-gnu/libLLVM-15.so /usr/lib/x86_64-linux-gnu/libLLVM.so
-      
-      - name: Symlink libLLVM-15.so (Linux)
+      # Install LLVM and Clang dev packages so llvm-config and the .so are present
+      - name: Install LLVM 15 & Clang (Ubuntu)
         if: contains(matrix.os, 'ubuntu')
         run: |
-          sudo ln -s "${LLVM_PATH}/lib/libLLVM-15.so" /usr/lib/x86_64-linux-gnu/libLLVM.so
+          sudo apt-get update
+          sudo apt-get install -y \
+              libpolly-15-dev \
+              libomp-15-dev \
+              llvm-15-dev \
+              llvm-15-tools \
+              libllvm15
+          sudo rm /usr/bin/llvm-config
+          sudo ln -s /usr/bin/llvm-config-15 /usr/bin/llvm-config
+
 
       - name: Install dependencies
         # If we had an exact cache hit, the dependencies will be up to date.
