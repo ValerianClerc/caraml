@@ -3,7 +3,7 @@ FROM ubuntu:24.04
 ARG GHC_VERSION=9.6.7
 
 # install system tools & GHC via ghcup
-RUN apt-get update && apt-get install -y --no-install-recommends \ curl \
+RUN apt-get update && apt-get install -y --no-install-recommends \ 
   ca-certificates \
   build-essential \
   curl \
