@@ -6,9 +6,7 @@ ARG GHC_VERSION=9.6.7
 RUN apt-get update && apt-get install -y --no-install-recommends \ curl \
   ca-certificates \
   build-essential \
-  ghc \
-  cabal-install \
-  zlib1g-dev \
+  curl \
   libgmp-dev \
   libffi-dev \
   ncurses-dev \
