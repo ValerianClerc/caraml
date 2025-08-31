@@ -3,10 +3,12 @@ FROM ubuntu:24.04
 ARG GHC_VERSION=9.6.7
 
 # install system tools & GHC via ghcup
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  curl \
+RUN apt-get update && apt-get install -y --no-install-recommends \ curl \
   ca-certificates \
   build-essential \
+  ghc \
+  cabal-install \
+  zlib1g-dev \
   libgmp-dev \
   libffi-dev \
   ncurses-dev \
@@ -32,6 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /usr/local/opt/ghc-${GHC_VERSION}/share \
   && ghcup gc -p -s -c -t \
   && rm /usr/local/bin/ghcup
+
+RUN ghc --version && cabal --version
 
 # copy source and build
 COPY . /workspaces/caraml
