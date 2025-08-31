@@ -4,28 +4,19 @@ ARG GHC_VERSION=9.6.7
 
 # install system tools & GHC via ghcup
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  bash \
-  build-essential \
-  binutils \
   curl \
-  g++ \
-  gcc \
-  clang \
+  ca-certificates \
+  build-essential \
   libgmp-dev \
   libffi-dev \
-  make \
   ncurses-dev \
-  perl \
   pkg-config \
-  shadow \
   tar \
   xz-utils \
-  ca-certificates \
-  file \
-  libpolly-15-dev \
-  libomp-15-dev \
   llvm-15-dev \
   llvm-15-tools \
+  libomp-15-dev \
+  libpolly-15-dev \
   libllvm15 \
   && rm -rf /var/lib/apt/lists/* \
   # Install ghcup and GHC
@@ -39,9 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && find /usr/local/opt/ghc-${GHC_VERSION}/lib -type f \( -name '*_p.a' -o -name '*.p_hi' \) -delete \
   && rm -rf /usr/local/opt/ghc-${GHC_VERSION}/share \
   && ghcup gc -p -s -c -t \
-  && rm /usr/local/bin/ghcup \
-  # keep shell around for interactive debugging
-  COPY . /workspaces/caraml
+  && rm /usr/local/bin/ghcup
+
+# copy source and build
+COPY . /workspaces/caraml
 WORKDIR /workspaces/caraml
 RUN make test && cabal v2-install --installdir=/usr/local/bin --overwrite-policy=always
 ENTRYPOINT ["caraml"]
