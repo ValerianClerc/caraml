@@ -5,6 +5,5 @@ source-repository-package
     location: https://github.com/jforberg/llvm-hs.git
     tag:      5bca2c1a2a3aa98ecfb19181e7a5ebbf3e212b76 
     -- tag:      e4b3cfa47e72f094ab109884f18acfc666b0fb7d -- llvm-15
-    subdir:
-        llvm-hs
-        llvm-hs-pure
+    subdir: llvm-hs
+    subdir: llvm-hs-pure
