@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ncurses-dev \
   pkg-config \
   tar \
+  git \
   xz-utils \
   llvm-15-dev \
   llvm-15-tools \
