@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libpolly-15-dev \
   libllvm15 \
   libzstd1 \
+  libzstd-dev \
   && rm -rf /var/lib/apt/lists/* 
 
 # install ghcup
