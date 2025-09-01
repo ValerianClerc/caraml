@@ -39,7 +39,7 @@ RUN \
   chmod +x /usr/bin/ghcup
 
 ARG GHC=9.6.7
-ARG CABAL=latest
+ARG CABAL=3.12.1.0
 
 # Install GHC and cabal
 RUN \
@@ -53,5 +53,6 @@ RUN ghc --version && cabal --version
 # copy source and build
 COPY . /workspaces/caraml
 WORKDIR /workspaces/caraml
+RUN cabal update
 RUN make test && cabal v2-install --installdir=/usr/local/bin --overwrite-policy=always
 ENTRYPOINT ["caraml"]
