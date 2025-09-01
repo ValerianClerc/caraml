@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   lsb-release \
   software-properties-common \
   gnupg2 \
+  dirmngr \
   apt-transport-https \
   gcc \
   autoconf \
@@ -35,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/* 
 
 ARG GPG_KEY=7784930957807690A66EBDBE3786C5262ECB4A3F
-RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY
+# Use Ubuntu keyserver over HKP to avoid 'No data' errors
+RUN gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys "$GPG_KEY"
 
 # install ghcup
 RUN \
