@@ -46,7 +46,7 @@ RUN \
   ghcup -v install ghc --isolate /usr/local --force ${GHC} && \
   ghcup -v install cabal --isolate /usr/local/bin --force ${CABAL} \
   && ghcup gc -p -s -c -t \
-  && rm /usr/local/bin/ghcup
+  && rm /usr/bin/ghcup
 
 RUN ghc --version && cabal --version
 
