@@ -1,6 +1,7 @@
 FROM ubuntu:24.04
 
-ARG GHC_VERSION=9.6.7
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
 
 # install system tools & GHC via ghcup
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
@@ -10,6 +11,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libgmp-dev \
   libffi-dev \
   ncurses-dev \
+  libnuma-dev \
+  zlib1g-dev \
+  libgmp10 \
+  wget \
+  lsb-release \
+  software-properties-common \
+  gnupg2 \
+  apt-transport-https \
+  gcc \
+  autoconf \
+  automake \
+  build-essential \
   pkg-config \
   tar \
   git \
@@ -19,17 +32,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libomp-15-dev \
   libpolly-15-dev \
   libllvm15 \
-  && rm -rf /var/lib/apt/lists/* \
-  # Install ghcup and GHC
-  && curl --fail --output /usr/local/bin/ghcup \
-  https://downloads.haskell.org/ghcup/x86_64-linux-ghcup \
-  && chmod 0755 /usr/local/bin/ghcup \
-  && ghcup install cabal  \
-  # && mkdir /usr/local/opt \
-  && ghcup install ghc ${GHC_VERSION} \
-  # && find /usr/local/opt/ghc-${GHC_VERSION}/bin -type f -exec ln -s {} /usr/local/bin \; \
-  # && find /usr/local/opt/ghc-${GHC_VERSION}/lib -type f \( -name '*_p.a' -o -name '*.p_hi' \) -delete \
-  # && rm -rf /usr/local/opt/ghc-${GHC_VERSION}/share \
+  && rm -rf /var/lib/apt/lists/* 
+
+ARG GPG_KEY=7784930957807690A66EBDBE3786C5262ECB4A3F
+RUN gpg --batch --keyserver keys.openpgp.org --recv-keys $GPG_KEY
+
+# install ghcup
+RUN \
+  curl https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup && \
+  chmod +x /usr/bin/ghcup && \
+  ghcup config set gpg-setting GPGStrict
+
+ARG GHC=9.6.7
+ARG CABAL=latest
+
+# Install GHC and cabal
+RUN \
+  ghcup -v install ghc --isolate /usr/local --force ${GHC} && \
+  ghcup -v install cabal --isolate /usr/local/bin --force ${CABAL} \
   && ghcup gc -p -s -c -t \
   && rm /usr/local/bin/ghcup
 
