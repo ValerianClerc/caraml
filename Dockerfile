@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libomp-15-dev \
   libpolly-15-dev \
   libllvm15 \
+  zstd \
   && rm -rf /var/lib/apt/lists/* 
 
 # install ghcup
