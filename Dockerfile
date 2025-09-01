@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install ghcup
 RUN \
   curl https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup && \
-  chmod +x /usr/bin/ghcup && 
+  chmod +x /usr/bin/ghcup
 
 ARG GHC=9.6.7
 ARG CABAL=latest
