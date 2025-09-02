@@ -30,6 +30,10 @@ test/                 # test suite
 caraml.cabal          # config file for the cabal package
 ```
 
+## Runtime dependencies
+* clang
+* llvm version 15? (or could be just build-time?)
+
 ## Very useful references/blogs
 * [LLVM basics in Haskell](https://danieljharvey.github.io/posts/2023-02-08-llvm-compiler-part-1.html)
 

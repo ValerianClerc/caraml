@@ -57,5 +57,5 @@ RUN ghc --version && cabal --version
 COPY . /workspaces/caraml
 WORKDIR /workspaces/caraml
 RUN cabal update
-RUN make test && cabal v2-install --installdir=/usr/local/bin --overwrite-policy=always
+RUN make install
 ENTRYPOINT ["caraml"]
