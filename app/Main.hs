@@ -7,10 +7,12 @@ import Lib
 import Parser
 import System.Environment
 import System.FilePath
+import System.Directory (copyFile)
 import System.IO
 import Text.Read (readMaybe)
 import ToLlvm (printLlvm, toLLVM)
 import TypeInfer (runTyper)
+import Paths_caraml (getDataFileName)
 
 main :: IO ()
 main = do
@@ -50,4 +52,8 @@ main = do
         case result of
           Just val -> putStrLn $ "Result: " ++ show val
           Nothing -> putStrLn "Compilation or execution failed"
+    EmitRuntime -> do
+      runtimePath <- getDataFileName "runtime/runtime.c"
+      copyFile runtimePath filePath
+      putStrLn $ "Runtime copied to " ++ filePath
     Invalid -> putStrLn "Invalid parameters"

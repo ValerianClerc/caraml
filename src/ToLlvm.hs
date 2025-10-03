@@ -40,8 +40,8 @@ toLLVM :: [TypedExpr] -> LLVM.AST.Module
 toLLVM exprs =
   LLVM.IRBuilder.Module.buildModule "program" $ do
     -- Inject the printint function (To be implemented in C)
-    printInt <- LLVM.IRBuilder.extern "printint" [LLVM.AST.Type.i32] LLVM.AST.Type.i32
-    printBool <- LLVM.IRBuilder.extern "printbool" [LLVM.AST.Type.i1] LLVM.AST.Type.i32
+    printInt <- LLVM.IRBuilder.extern "printint" [LLVM.AST.Type.i32] LLVM.AST.Type.void
+    printBool <- LLVM.IRBuilder.extern "printbool" [LLVM.AST.Type.i1] LLVM.AST.Type.void
 
     -- Define the main function that will evaluate our expressions
     LLVM.IRBuilder.Module.function "main" [] LLVM.AST.Type.i32 $ \[] -> do
