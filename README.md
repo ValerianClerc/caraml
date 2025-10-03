@@ -45,3 +45,21 @@ caraml.cabal          # config file for the cabal package
 
 
 * Add make script: `clang -Wno-override-module -lm test.ll test.c -o a.out`
+
+## WASM notes:
+
+1. Compile runtime: 
+```
+docker run --rm -v $(pwd):/src -u $(id -u):$(id -g)   emscripten/emsdk emcc -O2 runtime/runtime.c -c -o runtime/runtime.o
+```
+2. Compile code:
+```
+docker run --rm -v $(pwd):/src -u $(id -u):$(id -g)   emscripten/emsdk emcc -O2 --emrun runtime/runtime.o test/file.ll -o fib.html
+```
+
+Unconfirmed:
+Compile code to be called in React:
+```
+docker run --rm -v "$(pwd)":/src -u "$(id -u)":"$(id -g)" emscripten/emsdk emcc test/file.ll -O3   -s WASM=1   -s MODULARIZE=1   -s EXPORT_NAME="createExec"   -s INVOKE_RUN=0   -s EXIT_RUNTIME=1   -s ALLOW
+_MEMORY_GROWTH=1 runtime/runtime.o  -o exec.js
+```
