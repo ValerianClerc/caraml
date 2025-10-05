@@ -3,8 +3,6 @@ name: build-and-push-docker
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 env:
   LATEST_TAG: vclerc/caraml:latest
