@@ -5,27 +5,32 @@ import qualified Data.Text as T
 import GHC.IO.Exception (ExitCode (ExitSuccess))
 import LLVM.Context (withContext)
 import LLVM.Module (moduleLLVMAssembly, withModuleFromAST)
+import Paths_caraml (getDataFileName)
 import System.Directory (removeFile)
 import System.Process (readProcessWithExitCode)
 import Text.Read (readMaybe)
 import ToLlvm (toLLVM)
 import TypeInfer (TypedExpr)
 
-runtimeSrc :: String
-runtimeSrc = "./runtime/runtime.c"
+runtimeRel :: FilePath
+runtimeRel = "runtime/runtime.c"
 
 compileAndRun :: [TypedExpr] -> IO (Maybe String)
 compileAndRun exprs = do
-  let llvmModule = toLLVM exprs
+  let llvmModule = toLLVM exprs -- TODO: compile to binary straight from llvmModule? Instead of needing IR + clang
+  -- maybe with withModuleInEngine (JIT)
+  -- https://hackage.haskell.org/package/llvm-hs-9.0.1/docs/LLVM.html#objectcode
   llvmIR <- withContext $ \context ->
     withModuleFromAST context llvmModule $ \m ->
       moduleLLVMAssembly m
+  -- writeObjectToFile utility in llvm-hs to output llvm IR
 
   let llFile = "temp_test.ll"
   let objFile = "temp_test.o"
   let exeFile = "temp_test_exe"
   BS.writeFile llFile llvmIR
 
+  runtimeSrc <- getDataFileName runtimeRel
   (exitCodeClang, _, stderrClang) <-
     readProcessWithExitCode "clang" ["-Wno-override-module", "-lm", llFile, runtimeSrc, "-o", exeFile] ""
 

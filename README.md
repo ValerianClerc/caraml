@@ -19,6 +19,30 @@ To run a specific step of the compiler, specify it with a flag:
 cabal run caraml-exe -- --lexer test/file.cml
 ```
 
+### Runtime support
+
+The generated LLVM IR calls small runtime helpers (`printint`, `printbool`). When you install the `caraml` executable, the C runtime source file (`runtime.c`) is shipped as a data file. You can retrieve a copy at any time with:
+
+```bash
+cabal run caraml-exe -- --emit-runtime runtime.c
+```
+
+Then compile your program like so:
+
+```bash
+# Generate LLVM IR
+cabal run caraml-exe -- --llvm test/file.cml  # produces test/file.ll
+
+# Build native binary (clang will compile both IR and runtime C)
+clang -Wno-override-module -lm test/file.ll runtime.c -o a.out
+```
+
+Or run directly via the built-in driver (which automatically locates the installed runtime):
+
+```bash
+cabal run caraml-exe -- --compile-and-run test/file.cml
+```
+
 ## Repo structure
 
 ```
