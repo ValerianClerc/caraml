@@ -76,9 +76,9 @@ printOperand ::
 printOperand printInt printBool operand =
   case operandType operand of
     LLVM.AST.Type.IntegerType 32 ->
-      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.i32 [LLVM.AST.Type.i32] False) printInt [(operand, [])]
+      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.void [LLVM.AST.Type.i32] False) printInt [(operand, [])]
     LLVM.AST.Type.IntegerType 1 ->
-      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.i32 [LLVM.AST.Type.i1] False) printBool [(operand, [])]
+      LLVM.IRBuilder.Instruction.call (LLVM.AST.Type.FunctionType LLVM.AST.Type.void [LLVM.AST.Type.i1] False) printBool [(operand, [])]
     _ -> error $ "Unsupported operand type for printing: " ++ show (operandType operand)
   where
     operandType (LocalReference t _) = t

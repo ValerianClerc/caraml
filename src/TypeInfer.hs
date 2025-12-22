@@ -7,6 +7,7 @@ import Common (Type (..))
 import Control.DeepSeq (NFData)
 import Data.List (find, mapAccumL)
 import GHC.Generics (Generic)
+import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Parser (Expr (BinOp, Conditional, FunCall, FunDecl, Let, PBool, PInt, VarExpr), Op (..))
 
 data Identifier = Variable {varType :: Type, name :: String}
@@ -41,14 +42,22 @@ getVarType (TypeEnv bindings) ident =
 checkBinOpType :: Type -> Op -> Type -> Type
 checkBinOpType t1 op t2
   | t1 == TUnknown && t2 == TUnknown = TUnknown
-  | op `elem` [OpPlus, OpMinus, OpMult, OpDiv, OpLt, OpGt, OpLeq, OpGeq] =
+  | op `elem` [OpPlus, OpMinus, OpMult, OpDiv] =
       if t1 == TInt && t2 == TInt || t1 == TUnknown && t2 == TInt || t1 == TInt && t2 == TUnknown
         then TInt
+        else error $ "Expected both operands to be of type Int, got " ++ show t1 ++ " and " ++ show t2
+  | op `elem` [OpLt, OpGt, OpLeq, OpGeq] =
+      if t1 == TInt && t2 == TInt || t1 == TUnknown && t2 == TInt || t1 == TInt && t2 == TUnknown
+        then TBool
         else error $ "Expected both operands to be of type Int, got " ++ show t1 ++ " and " ++ show t2
   | op `elem` [OpEq, OpNeq] =
       if t1 == t2 || t1 == TUnknown || t2 == TUnknown
         then TBool
         else error $ "Expected both operands to be of same type, got " ++ show t1 ++ " and " ++ show t2
+  | op `elem` [OpAnd, OpOr] =
+      if t1 == TBool && t2 == TBool || t1 == TUnknown && t2 == TBool || t1 == TBool && t2 == TUnknown
+        then TBool
+        else error $ "Expected both operands to be of type Bool, got " ++ show t1 ++ " and " ++ show t2
   | otherwise = error $ "Unsupported binary operator " ++ show op ++ " for types " ++ show t1 ++ " and " ++ show t2
 
 runTyper :: [Expr] -> [TypedExpr]
@@ -124,17 +133,50 @@ typeExpr env (Parser.FunCall name args) =
         Just t -> error $ "Expected " ++ name ++ " to be of type TFun, got " ++ show t
 typeExpr env expr = error $ "Type inference not implemented for " ++ show expr
 
-throwIfUnknown :: Type -> a -> a
-throwIfUnknown t x = if t == TUnknown then error "Type inference failed: unknown type" else x
+throwIfUnknown :: (HasCallStack) => Type -> a -> a
+throwIfUnknown t x = if t == TUnknown then error ("Type inference failed: unknown type\n" ++ prettyCallStack callStack) else x
 
-checkForUnknowns :: TypeEnv -> TypedExpr -> TypedExpr
+getType :: TypedExpr -> Type
+getType (IntTExpr _) = TInt
+getType (BoolTExpr _) = TBool
+getType (IdentTExpr (Variable t _)) = t
+getType (LetTExpr _ _) = TVoid
+getType (IfTExpr t _ _ _) = t
+getType (BinOpTExpr t _ _ _) = t
+getType (FunDeclTExpr _ _ _) = TVoid
+getType (FunCallTExpr (Variable (TFun _ t) _) _) = t
+getType (FunCallTExpr (Variable t _) _) = error $ "Expected TFun, got " ++ show t
+
+checkForUnknowns :: (HasCallStack) => TypeEnv -> TypedExpr -> TypedExpr
 checkForUnknowns _ (IntTExpr i) = IntTExpr i
 checkForUnknowns _ (BoolTExpr b) = BoolTExpr b
 checkForUnknowns env (IdentTExpr (Variable t name)) = throwIfUnknown t (IdentTExpr (Variable t name))
-checkForUnknowns env (LetTExpr var expr) = throwIfUnknown TVoid (LetTExpr var (checkForUnknowns env expr))
-checkForUnknowns env (IfTExpr t boolExpr ifExpr elseExpr) = throwIfUnknown t (IfTExpr t (checkForUnknowns env boolExpr) (checkForUnknowns env ifExpr) (checkForUnknowns env elseExpr))
-checkForUnknowns env (BinOpTExpr t left op right) = throwIfUnknown t (BinOpTExpr t (checkForUnknowns env left) op (checkForUnknowns env right))
-checkForUnknowns env (FunDeclTExpr var@(Variable (TFun targs returnType) name) args expr) = throwIfUnknown returnType (FunDeclTExpr var args (checkForUnknowns env expr))
+checkForUnknowns env (LetTExpr var@(Variable t name) expr) =
+  let expr' = checkForUnknowns env expr
+      t' = if t == TUnknown then getType expr' else t
+      var' = Variable t' name
+   in throwIfUnknown TVoid (LetTExpr var' expr')
+checkForUnknowns env (IfTExpr t boolExpr ifExpr elseExpr) =
+  let boolExpr' = checkForUnknowns env boolExpr
+      ifExpr' = checkForUnknowns env ifExpr
+      elseExpr' = checkForUnknowns env elseExpr
+      t' =
+        if t == TUnknown
+          then
+            let tIf = getType ifExpr'
+             in if tIf == TUnknown then getType elseExpr' else tIf
+          else t
+   in throwIfUnknown t' (IfTExpr t' boolExpr' ifExpr' elseExpr')
+checkForUnknowns env (BinOpTExpr t left op right) =
+  let left' = checkForUnknowns env left
+      right' = checkForUnknowns env right
+      t' = if t == TUnknown then checkBinOpType (getType left') op (getType right') else t
+   in throwIfUnknown t' (BinOpTExpr t' left' op right')
+checkForUnknowns env (FunDeclTExpr var@(Variable (TFun targs returnType) name) args expr) =
+  let expr' = checkForUnknowns env expr
+      returnType' = if returnType == TUnknown then getType expr' else returnType
+      var' = Variable (TFun targs returnType') name
+   in throwIfUnknown returnType' (FunDeclTExpr var' args expr')
 checkForUnknowns env (FunDeclTExpr {}) = error "Internal compiler error: FunDeclTExpr should have TFun type"
 checkForUnknowns env (FunCallTExpr (Variable (TFun _ TUnknown) name) args) =
   case getVarType env name of

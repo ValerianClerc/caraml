@@ -70,10 +70,10 @@ typeTests testCases = do
         it "#4 (division)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpDiv (PInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpDiv (IntTExpr 2), TInt, emptyTEnv)
         it "#5 (equality bool)" $ typeExpr emptyTEnv (BinOp (PBool True) OpEq (PBool False)) `shouldBe` (BinOpTExpr TBool (BoolTExpr True) OpEq (BoolTExpr False), TBool, emptyTEnv)
         it "#6 (equality int)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpEq (PInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpEq (IntTExpr 2), TBool, emptyTEnv)
-        it "#7 (less than)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpLt (PInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpLt (IntTExpr 2), TInt, emptyTEnv)
-        it "#8 (less than or equal)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpLeq (PInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpLeq (IntTExpr 2), TInt, emptyTEnv)
-        it "#9 (greater than)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpGt (PInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpGt (IntTExpr 2), TInt, emptyTEnv)
-        it "#10 (greater than or equal)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpGeq (PInt 2)) `shouldBe` (BinOpTExpr TInt (IntTExpr 1) OpGeq (IntTExpr 2), TInt, emptyTEnv)
+        it "#7 (less than)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpLt (PInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpLt (IntTExpr 2), TBool, emptyTEnv)
+        it "#8 (less than or equal)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpLeq (PInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpLeq (IntTExpr 2), TBool, emptyTEnv)
+        it "#9 (greater than)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpGt (PInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpGt (IntTExpr 2), TBool, emptyTEnv)
+        it "#10 (greater than or equal)" $ typeExpr emptyTEnv (BinOp (PInt 1) OpGeq (PInt 2)) `shouldBe` (BinOpTExpr TBool (IntTExpr 1) OpGeq (IntTExpr 2), TBool, emptyTEnv)
       describe "invalid" $ do
         it "#1 (different typed operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (PInt 1) OpEq (PBool True)))) `shouldThrow` anyErrorCall
         it "#1 (invalid operands)" $ evaluate (force (typeExpr emptyTEnv (BinOp (PBool False) OpPlus (PBool True)))) `shouldThrow` anyErrorCall
@@ -98,5 +98,67 @@ typeTests testCases = do
         it "#1 (not in scope)" $ evaluate (force (typeExpr emptyTEnv (FunCall "f" [PBool True]))) `shouldThrow` anyErrorCall
         it "#2 (wrong number of args)" $ evaluate (force (typeExpr funcEnv (FunCall "f" [PBool True, PBool False]))) `shouldThrow` anyErrorCall
         it "#3 (wrong type of args)" $ evaluate (force (typeExpr funcEnv (FunCall "f" [PInt 1]))) `shouldThrow` anyErrorCall
+    describe "checkForUnknowns resolution" $ do
+      it "resolves BinOpTExpr with TUnknown" $ do
+        let input = BinOpTExpr TUnknown (IntTExpr 1) OpPlus (IntTExpr 2)
+        let expected = BinOpTExpr TInt (IntTExpr 1) OpPlus (IntTExpr 2)
+        checkForUnknowns emptyTEnv input `shouldBe` expected
+
+      it "resolves IfTExpr with TUnknown" $ do
+        let input = IfTExpr TUnknown (BoolTExpr True) (IntTExpr 1) (IntTExpr 2)
+        let expected = IfTExpr TInt (BoolTExpr True) (IntTExpr 1) (IntTExpr 2)
+        checkForUnknowns emptyTEnv input `shouldBe` expected
+
+      it "resolves LetTExpr with TUnknown variable" $ do
+        let input = LetTExpr (Variable TUnknown "x") (IntTExpr 1)
+        let expected = LetTExpr (Variable TInt "x") (IntTExpr 1)
+        checkForUnknowns emptyTEnv input `shouldBe` expected
+
+      it "resolves FunDeclTExpr with TUnknown return type" $ do
+        let input = FunDeclTExpr (Variable (TFun [] TUnknown) "f") [] (IntTExpr 1)
+        let expected = FunDeclTExpr (Variable (TFun [] TInt) "f") [] (IntTExpr 1)
+        checkForUnknowns emptyTEnv input `shouldBe` expected
+
+    describe "Integration tests with runTyper" $ do
+      it "infers recursive sum function and let binding" $ do
+        -- fun sum(n: int) = if n = 0 then 0 else n + sum(n - 1)
+        let sumDecl =
+              FunDecl
+                "sum"
+                [("n", TInt)]
+                ( Conditional
+                    (BinOp (VarExpr "n") OpEq (PInt 0))
+                    (PInt 0)
+                    (BinOp (VarExpr "n") OpPlus (FunCall "sum" [BinOp (VarExpr "n") OpMinus (PInt 1)]))
+                )
+        -- let s = sum(5)
+        let letDecl = Let "s" (FunCall "sum" [PInt 5])
+        let exprs = [sumDecl, letDecl]
+
+        let result = runTyper exprs
+        let (FunDeclTExpr sumVar _ _) = head result
+        let (LetTExpr sVar _) = last result
+
+        varType sumVar `shouldBe` TFun [TInt] TInt
+        varType sVar `shouldBe` TInt
+
+      it "infers let binding with recursive function call" $ do
+        -- fun f(x: int) = if x = 0 then 0 else f(x - 1)
+        let fDecl =
+              FunDecl
+                "f"
+                [("x", TInt)]
+                ( Conditional
+                    (BinOp (VarExpr "x") OpEq (PInt 0))
+                    (PInt 0)
+                    (FunCall "f" [BinOp (VarExpr "x") OpMinus (PInt 1)])
+                )
+        -- let y = f(5)
+        let letDecl = Let "y" (FunCall "f" [PInt 5])
+        let exprs = [fDecl, letDecl]
+        let result = runTyper exprs
+        let (LetTExpr yVar _) = last result
+        varType yVar `shouldBe` TInt
+
   describe "Type inference full file test cases:" $ do
     fullFileTestCases matchTypeInferenceTestCase

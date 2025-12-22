@@ -169,5 +169,123 @@ testCases =
         parsedTestCase = [BinOp (BinOp (PInt 1) OpPlus (PInt 2)) OpPlus (PInt 3)],
         typedTestCase = [BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = BinOpTExpr {exprType = TInt, TypeInfer.binOpLeft = IntTExpr 1, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 2}, TypeInfer.binOp = OpPlus, TypeInfer.binOpRight = IntTExpr 3}],
         expectedOutput = "6"
+      },
+    -- fibonacci
+    TestCase
+      { rawTestCase = "fun fib(n:int) = if n<=1 then n else fib(n-1)+fib(n-2); fib(10);",
+        lexedTestCase =
+          [ FUN,
+            IDENT "fib",
+            LPAREN,
+            IDENT "n",
+            COLON,
+            KINT,
+            RPAREN,
+            EQU,
+            IF,
+            IDENT "n",
+            LEQ,
+            DIGIT 1,
+            THEN,
+            IDENT "n",
+            ELSE,
+            IDENT "fib",
+            LPAREN,
+            IDENT "n",
+            MINUS,
+            DIGIT 1,
+            RPAREN,
+            PLUS,
+            IDENT "fib",
+            LPAREN,
+            IDENT "n",
+            MINUS,
+            DIGIT 2,
+            RPAREN,
+            SC,
+            IDENT "fib",
+            LPAREN,
+            DIGIT 10,
+            RPAREN,
+            SC,
+            EOF
+          ],
+        parsedTestCase =
+          [ FunDecl
+              { funDeclName = "fib",
+                funDeclArgs = [("n", TInt)],
+                funDeclExpr =
+                  Conditional
+                    { Parser.condBool = BinOp (VarExpr "n") OpLeq (PInt 1),
+                      Parser.condIf = VarExpr "n",
+                      Parser.condElse =
+                        BinOp
+                          ( FunCall
+                              { funCallName = "fib",
+                                funCallArgs = [BinOp (VarExpr "n") OpMinus (PInt 1)]
+                              }
+                          )
+                          OpPlus
+                          ( FunCall
+                              { funCallName = "fib",
+                                funCallArgs = [BinOp (VarExpr "n") OpMinus (PInt 2)]
+                              }
+                          )
+                    }
+              },
+            FunCall {funCallName = "fib", funCallArgs = [PInt 10]}
+          ],
+        typedTestCase =
+          [ FunDeclTExpr
+              { funDeclIdent = Variable (TFun [TInt] TInt) "fib",
+                funDeclTArgs = [Variable TInt "n"],
+                funDeclTExpr =
+                  IfTExpr
+                    { exprType = TInt,
+                      TypeInfer.condBool =
+                        BinOpTExpr
+                          { exprType = TBool,
+                            TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"),
+                            TypeInfer.binOp = OpLeq,
+                            TypeInfer.binOpRight = IntTExpr 1
+                          },
+                      TypeInfer.condIf = IdentTExpr (Variable TInt "n"),
+                      TypeInfer.condElse =
+                        BinOpTExpr
+                          { exprType = TInt,
+                            TypeInfer.binOpLeft =
+                              FunCallTExpr
+                                { funCallIdent = Variable (TFun [TInt] TInt) "fib",
+                                  funCallTArgs =
+                                    [ BinOpTExpr
+                                        { exprType = TInt,
+                                          TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"),
+                                          TypeInfer.binOp = OpMinus,
+                                          TypeInfer.binOpRight = IntTExpr 1
+                                        }
+                                    ]
+                                },
+                            TypeInfer.binOp = OpPlus,
+                            TypeInfer.binOpRight =
+                              FunCallTExpr
+                                { funCallIdent = Variable (TFun [TInt] TInt) "fib",
+                                  funCallTArgs =
+                                    [ BinOpTExpr
+                                        { exprType = TInt,
+                                          TypeInfer.binOpLeft = IdentTExpr (Variable TInt "n"),
+                                          TypeInfer.binOp = OpMinus,
+                                          TypeInfer.binOpRight = IntTExpr 2
+                                        }
+                                    ]
+                                }
+                          }
+                    }
+              },
+            FunCallTExpr
+              { funCallIdent = Variable (TFun [TInt] TInt) "fib",
+                funCallTArgs = [IntTExpr 10]
+              }
+          ],
+        expectedOutput = "55"
       }
   ]

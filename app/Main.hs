@@ -5,14 +5,14 @@ import qualified Data.ByteString as BS
 import Lexer
 import Lib
 import Parser
+import Paths_caraml (getDataFileName)
+import System.Directory (copyFile)
 import System.Environment
 import System.FilePath
-import System.Directory (copyFile)
 import System.IO
 import Text.Read (readMaybe)
 import ToLlvm (printLlvm, toLLVM)
 import TypeInfer (runTyper)
-import Paths_caraml (getDataFileName)
 
 withSource :: FilePath -> (String -> IO a) -> IO a
 withSource fp k = do
@@ -20,27 +20,23 @@ withSource fp k = do
   k src
 
 helpMessage :: String
-helpMessage = unlines
-  [ "Usage: caraml <command> <file-path>"
-  , "Commands:"
-  , "  --emit-runtime <file-path>     Copy the runtime C file to the specified path"
-  , "  --lexer <file-path>            Run the lexer on the specified file and print tokens"
-  , "  --parser <file-path>           Run the parser on the specified file and print the AST"
-  , "  --typecheck <file-path>        Run type checking on the specified file and print the typed AST"
-  , "  --llvm <file-path>             Compile the specified file to LLVM IR and save it as a .ll file"
-  , "  --compile-and-run <file-path>  Compile and run the specified file, printing the result"
-  , "  --help                         Show this help message"
-  ]
+helpMessage =
+  unlines
+    [ "Usage: caraml <command> <file-path>",
+      "Commands:",
+      "  --emit-runtime <file-path>     Copy the runtime C file to the specified path",
+      "  --lexer <file-path>            Run the lexer on the specified file and print tokens",
+      "  --parser <file-path>           Run the parser on the specified file and print the AST",
+      "  --typecheck <file-path>        Run type checking on the specified file and print the typed AST",
+      "  --llvm <file-path>             Compile the specified file to LLVM IR and save it as a .ll file",
+      "  --compile-and-run <file-path>  Compile and run the specified file, printing the result",
+      "  --help                         Show this help message"
+    ]
 
 main :: IO ()
 main = do
   args <- getArgs
   let (cmd, filePath) = handleArgs args
-  putStrLn $
-    "Running the following command: "
-      ++ show cmd
-      ++ ", at path: "
-      ++ filePath
   let pipeline = runTyper . runParser . runLex
   case cmd of
     EmitRuntime -> do
