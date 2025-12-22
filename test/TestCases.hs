@@ -287,5 +287,138 @@ testCases =
               }
           ],
         expectedOutput = "55"
+      },
+    TestCase
+      { rawTestCase = "fun gcd(a: int, b: int) = if b = 0 then a else gcd(b, a - (a / b) * b); let result = gcd(1071, 462);",
+        lexedTestCase =
+          [ FUN,
+            IDENT "gcd",
+            LPAREN,
+            IDENT "a",
+            COLON,
+            KINT,
+            COMMA,
+            IDENT "b",
+            COLON,
+            KINT,
+            RPAREN,
+            EQU,
+            IF,
+            IDENT "b",
+            EQU,
+            DIGIT 0,
+            THEN,
+            IDENT "a",
+            ELSE,
+            IDENT "gcd",
+            LPAREN,
+            IDENT "b",
+            COMMA,
+            IDENT "a",
+            MINUS,
+            LPAREN,
+            IDENT "a",
+            DIVIDE,
+            IDENT "b",
+            RPAREN,
+            ASTERISK,
+            IDENT "b",
+            RPAREN,
+            SC,
+            LET,
+            IDENT "result",
+            EQU,
+            IDENT "gcd",
+            LPAREN,
+            DIGIT 1071,
+            COMMA,
+            DIGIT 462,
+            RPAREN,
+            SC,
+            EOF
+          ],
+        parsedTestCase =
+          [ FunDecl
+              { funDeclName = "gcd",
+                funDeclArgs = [("a", TInt), ("b", TInt)],
+                funDeclExpr =
+                  Conditional
+                    { Parser.condBool = BinOp (VarExpr "b") OpEq (PInt 0),
+                      Parser.condIf = VarExpr "a",
+                      Parser.condElse =
+                        FunCall
+                          { funCallName = "gcd",
+                            funCallArgs =
+                              [ VarExpr "b",
+                                BinOp
+                                  (VarExpr "a")
+                                  OpMinus
+                                  ( BinOp
+                                      (BinOp (VarExpr "a") OpDiv (VarExpr "b"))
+                                      OpMult
+                                      (VarExpr "b")
+                                  )
+                              ]
+                          }
+                    }
+              },
+            Let
+              { Parser.letVar = "result",
+                Parser.letEqual =
+                  FunCall {funCallName = "gcd", funCallArgs = [PInt 1071, PInt 462]}
+              }
+          ],
+        typedTestCase =
+          [ FunDeclTExpr
+              { funDeclIdent = Variable (TFun [TInt, TInt] TInt) "gcd",
+                funDeclTArgs = [Variable TInt "a", Variable TInt "b"],
+                funDeclTExpr =
+                  IfTExpr
+                    { exprType = TInt,
+                      TypeInfer.condBool =
+                        BinOpTExpr
+                          { exprType = TBool,
+                            TypeInfer.binOpLeft = IdentTExpr (Variable TInt "b"),
+                            TypeInfer.binOp = OpEq,
+                            TypeInfer.binOpRight = IntTExpr 0
+                          },
+                      TypeInfer.condIf = IdentTExpr (Variable TInt "a"),
+                      TypeInfer.condElse =
+                        FunCallTExpr
+                          { funCallIdent = Variable (TFun [TInt, TInt] TInt) "gcd",
+                            funCallTArgs =
+                              [ IdentTExpr (Variable TInt "b"),
+                                BinOpTExpr
+                                  { exprType = TInt,
+                                    TypeInfer.binOpLeft = IdentTExpr (Variable TInt "a"),
+                                    TypeInfer.binOp = OpMinus,
+                                    TypeInfer.binOpRight =
+                                      BinOpTExpr
+                                        { exprType = TInt,
+                                          TypeInfer.binOpLeft =
+                                            BinOpTExpr
+                                              { exprType = TInt,
+                                                TypeInfer.binOpLeft = IdentTExpr (Variable TInt "a"),
+                                                TypeInfer.binOp = OpDiv,
+                                                TypeInfer.binOpRight = IdentTExpr (Variable TInt "b")
+                                              },
+                                          TypeInfer.binOp = OpMult,
+                                          TypeInfer.binOpRight = IdentTExpr (Variable TInt "b")
+                                        }
+                                  }
+                              ]
+                          }
+                    }
+              },
+            LetTExpr
+              { TypeInfer.letVar = Variable TInt "result",
+                TypeInfer.letEqual =
+                  FunCallTExpr
+                    { funCallIdent = Variable (TFun [TInt, TInt] TInt) "gcd",
+                      funCallTArgs = [IntTExpr 1071, IntTExpr 462]
+                    }
+              }
+          ],
+        expectedOutput = "21"
       }
   ]
